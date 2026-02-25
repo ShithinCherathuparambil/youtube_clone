@@ -8,6 +8,7 @@ import 'data/datasources/download_remote_data_source.dart';
 import 'data/datasources/video_remote_data_source.dart';
 import 'data/repositories/download_repository_impl.dart';
 import 'data/repositories/video_repository_impl.dart';
+import 'data/services/background_download_service.dart';
 import 'domain/repositories/download_repository.dart';
 import 'domain/repositories/video_repository.dart';
 import 'domain/usecases/get_cached_downloads.dart';
@@ -31,6 +32,7 @@ Future<void> init() async {
       () => DownloadRemoteDataSourceImpl(sl()),
     )
     ..registerLazySingleton<DownloadLocalDataSource>(() => DownloadLocalDataSourceImpl())
+    ..registerLazySingleton(() => BackgroundDownloadService(sl()))
     ..registerLazySingleton<VideoRepository>(() => VideoRepositoryImpl(sl()))
     ..registerLazySingleton<DownloadRepository>(
       () => DownloadRepositoryImpl(sl(), sl(), sl()),

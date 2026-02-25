@@ -1,29 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../injection_container.dart';
+import '../../core/config/app_router.dart';
 import '../bloc/download/download_manager_cubit.dart';
 import '../bloc/theme/theme_cubit.dart';
-import '../navigation/app_route_information_parser.dart';
-import '../navigation/app_router_delegate.dart';
 
-class YoutubeCloneApp extends StatefulWidget {
+class YoutubeCloneApp extends StatelessWidget {
   const YoutubeCloneApp({super.key});
-
-  @override
-  State<YoutubeCloneApp> createState() => _YoutubeCloneAppState();
-}
-
-class _YoutubeCloneAppState extends State<YoutubeCloneApp> {
-  late final AppRouterDelegate _routerDelegate;
-  late final AppRouteInformationParser _routeInformationParser;
-
-  @override
-  void initState() {
-    super.initState();
-    _routerDelegate = AppRouterDelegate();
-    _routeInformationParser = AppRouteInformationParser();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,14 +21,18 @@ class _YoutubeCloneAppState extends State<YoutubeCloneApp> {
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
-          return MaterialApp.router(
-            debugShowCheckedModeBanner: false,
-            title: 'YouTube Clone',
-            themeMode: themeMode,
-            theme: ThemeData.light(useMaterial3: true),
-            darkTheme: ThemeData.dark(useMaterial3: true),
-            routerDelegate: _routerDelegate,
-            routeInformationParser: _routeInformationParser,
+          return ScreenUtilInit(
+            designSize: const Size(375, 812),
+            minTextAdapt: true,
+            splitScreenMode: true,
+            builder: (context, child) => MaterialApp.router(
+              debugShowCheckedModeBanner: false,
+              title: 'YouTube Clone',
+              themeMode: themeMode,
+              theme: ThemeData.light(useMaterial3: true),
+              darkTheme: ThemeData.dark(useMaterial3: true),
+              routerConfig: appRouter,
+            ),
           );
         },
       ),

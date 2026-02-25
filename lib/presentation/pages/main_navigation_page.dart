@@ -1,61 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
-import '../pages/home_feed_page.dart';
-import '../pages/library_page.dart';
-import '../pages/shorts_page.dart';
-import '../pages/subscriptions_page.dart';
-import 'app_route_path.dart';
+class MainNavigationPage extends StatelessWidget {
+  const MainNavigationPage({super.key, required this.navigationShell});
 
-class AppRouterDelegate extends RouterDelegate<AppRoutePath>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<AppRoutePath> {
-  AppRouterDelegate();
+  final StatefulNavigationShell navigationShell;
 
-  @override
-  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
-  final PageStorageBucket _bucket = PageStorageBucket();
-  int _currentTab = 0;
-
-  @override
-  AppRoutePath get currentConfiguration => AppRoutePath.home(_currentTab);
-
-  @override
-  Future<void> setNewRoutePath(AppRoutePath configuration) async {
-    _currentTab = configuration.tabIndex;
+  void _onTap(int index) {
+    if (index == 2) {
+      // Add button tap inside bottom nav
+      return;
+    }
+    navigationShell.goBranch(
+      index,
+      initialLocation: index == navigationShell.currentIndex,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Navigator(
-      key: navigatorKey,
-      pages: [
-        MaterialPage<void>(
-          child: Scaffold(
-            body: PageStorage(
-              bucket: _bucket,
-              child: IndexedStack(
-                index: _currentTab,
-                children: const [
-                  HomeFeedPage(),
-                  ShortsPage(),
-                  SizedBox.shrink(),
-                  SubscriptionsPage(),
-                  LibraryPage(),
-                ],
-              ),
-            ),
-            bottomNavigationBar: _YoutubeBottomNavBar(
-              currentIndex: _currentTab,
-              onTap: (index) {
-                _currentTab = index;
-                notifyListeners();
-              },
-            ),
-          ),
-        ),
-      ],
-      onDidRemovePage: (page) {},
+    return Scaffold(
+      body: navigationShell,
+      bottomNavigationBar: _YoutubeBottomNavBar(
+        currentIndex: navigationShell.currentIndex,
+        onTap: _onTap,
+      ),
     );
   }
 }
@@ -96,7 +66,7 @@ class _YoutubeBottomNavBar extends StatelessWidget {
               ),
               Expanded(
                 child: InkWell(
-                  onTap: () {},
+                  onTap: () => onTap(2),
                   child: Center(
                     child: Container(
                       width: 50.w,
@@ -114,14 +84,14 @@ class _YoutubeBottomNavBar extends StatelessWidget {
                 index: 3,
                 currentIndex: currentIndex,
                 icon: Icons.subscriptions_outlined,
-                label: 'Subscription',
+                label: 'Subscriptions',
                 onTap: onTap,
               ),
               _NavItem(
                 index: 4,
                 currentIndex: currentIndex,
-                icon: Icons.video_library_outlined,
-                label: 'Library',
+                icon: Icons.account_circle_outlined,
+                label: 'You',
                 onTap: onTap,
               ),
             ],
@@ -167,7 +137,7 @@ class _NavItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.sp,
                 color: Colors.black,
-                fontWeight: FontWeight.w500,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
           ],

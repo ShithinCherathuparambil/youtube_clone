@@ -9,17 +9,17 @@ import '../../core/security/aes_encryption_service.dart';
 import '../../domain/entities/download_item.dart';
 import '../../domain/repositories/download_repository.dart';
 import '../datasources/download_local_data_source.dart';
-import '../datasources/download_remote_data_source.dart';
+import '../services/background_download_service.dart';
 
 @LazySingleton(as: DownloadRepository)
 class DownloadRepositoryImpl implements DownloadRepository {
   DownloadRepositoryImpl(
-    this._remoteDataSource,
+    this._backgroundDownloadService,
     this._localDataSource,
     this._encryptionService,
   );
 
-  final DownloadRemoteDataSource _remoteDataSource;
+  final BackgroundDownloadService _backgroundDownloadService;
   final DownloadLocalDataSource _localDataSource;
   final AesEncryptionService _encryptionService;
 
@@ -29,8 +29,8 @@ class DownloadRepositoryImpl implements DownloadRepository {
     required void Function(double progress) onProgress,
   }) async {
     try {
-      final tempFile = await _remoteDataSource.downloadToTemp(
-        item.sourceUrl,
+      final tempFile = await _backgroundDownloadService.startDownload(
+        sourceUrl: item.sourceUrl,
         fileName: '${item.videoId}.mp4',
         onProgress: onProgress,
       );

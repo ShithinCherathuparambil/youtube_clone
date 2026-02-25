@@ -86,7 +86,7 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerAppState> {
     Emitter<VideoPlayerAppState> emit,
   ) async {
     try {
-      final speed = event.speed.clamp(0.5, 2.0);
+      final speed = event.speed.clamp(0.5, 2.0).toDouble();
       await state.controller?.setPlaybackSpeed(speed);
       emit(state.copyWith(playbackSpeed: speed, error: null));
     } catch (e) {
@@ -99,7 +99,7 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerAppState> {
     Emitter<VideoPlayerAppState> emit,
   ) async {
     try {
-      final next = min(1.0, max(0, state.volume + event.delta));
+      final next = min(1.0, max(0.0, state.volume + event.delta)).toDouble();
       await state.controller?.setVolume(next);
       emit(state.copyWith(volume: next, error: null));
     } catch (e) {
@@ -112,7 +112,7 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerAppState> {
     Emitter<VideoPlayerAppState> emit,
   ) {
     try {
-      final next = min(1.0, max(0, state.brightness + event.delta));
+      final next = min(1.0, max(0.0, state.brightness + event.delta)).toDouble();
       // Hook here with system brightness plugin if required.
       emit(state.copyWith(brightness: next, error: null));
     } catch (e) {
