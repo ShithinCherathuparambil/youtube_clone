@@ -1,0 +1,48 @@
+name: youtube_clone
+description: "YouTube clone starter with Clean Architecture + BLoC."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Core architecture
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+  dartz: ^0.10.1
+  get_it: ^7.7.0
+  injectable: ^2.5.0
+
+  # Networking and storage
+  dio: ^5.8.0+1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  shared_preferences: ^2.5.2
+  flutter_secure_storage: ^9.2.4
+
+  # Media and UI
+  video_player: ^2.9.5
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+
+  # Crypto
+  encrypt: ^5.0.3
+
+  # Utilities
+  intl: ^0.20.2
+  logger: ^2.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.15
+  injectable_generator: ^2.7.0
+
+flutter:
+  uses-material-design: true
