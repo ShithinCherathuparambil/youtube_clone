@@ -6,6 +6,7 @@ import '../../injection_container.dart';
 import '../../core/config/app_router.dart';
 import '../bloc/download/download_manager_cubit.dart';
 import '../bloc/theme/theme_cubit.dart';
+import '../bloc/auth/auth_bloc.dart';
 
 class YoutubeCloneApp extends StatelessWidget {
   const YoutubeCloneApp({super.key});
@@ -15,6 +16,7 @@ class YoutubeCloneApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => ThemeCubit()),
+        BlocProvider(create: (_) => sl<AuthBloc>()),
         BlocProvider(
           create: (_) => sl<DownloadManagerCubit>()..loadCachedDownloads(),
         ),

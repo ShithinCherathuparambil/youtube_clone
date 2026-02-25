@@ -125,6 +125,7 @@ class _VideoInfoSection extends StatelessWidget {
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
+              color: Colors.black,
               height: 1.2,
             ),
             maxLines: 2,
@@ -165,6 +166,7 @@ class _ChannelInfoSection extends StatelessWidget {
                   'Awesome Channel',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
+                    color: Colors.black,
                     fontSize: 15.sp,
                   ),
                 ),
@@ -253,7 +255,7 @@ class _ActionButtonsSectionState extends State<_ActionButtonsSection>
           ),
           SizedBox(width: 8.w),
           _ActionButton(
-            icon: Icon(Icons.share_outlined, size: 20.sp),
+            icon: Icon(Icons.share_outlined, size: 20.sp, color: Colors.black),
             label: 'Share',
             onTap: () {
               Share.share('Check out this awesome video: ${widget.videoUrl}');
@@ -261,7 +263,11 @@ class _ActionButtonsSectionState extends State<_ActionButtonsSection>
           ),
           SizedBox(width: 8.w),
           _ActionButton(
-            icon: Icon(Icons.download_outlined, size: 20.sp),
+            icon: Icon(
+              Icons.download_outlined,
+              size: 20.sp,
+              color: Colors.black,
+            ),
             label: 'Download',
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -271,7 +277,11 @@ class _ActionButtonsSectionState extends State<_ActionButtonsSection>
           ),
           SizedBox(width: 8.w),
           _ActionButton(
-            icon: Icon(Icons.library_add_outlined, size: 20.sp),
+            icon: Icon(
+              Icons.library_add_outlined,
+              size: 20.sp,
+              color: Colors.black,
+            ),
             label: 'Save',
             onTap: () {},
           ),
@@ -309,7 +319,11 @@ class _ActionButton extends StatelessWidget {
             SizedBox(width: 6.w),
             Text(
               label,
-              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13.sp),
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 13.sp,
+                color: Colors.black,
+              ),
             ),
           ],
         ),
@@ -344,14 +358,18 @@ class _DescriptionSectionState extends State<_DescriptionSection> {
           children: [
             Text(
               '1.2M views  2 months ago',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13.sp,
+                color: Colors.black,
+              ),
             ),
             SizedBox(height: 4.h),
             Text(
               'This is a description for the video. It can be quite long, so we truncate it initially and let the user expand it to read more details about the content, links, and timestamps.',
               maxLines: _isExpanded ? null : 2,
               overflow: _isExpanded ? null : TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 13.sp),
+              style: TextStyle(fontSize: 13.sp, color: Colors.black87),
             ),
             if (!_isExpanded)
               Padding(
@@ -361,6 +379,7 @@ class _DescriptionSectionState extends State<_DescriptionSection> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13.sp,
+                    color: Colors.black,
                   ),
                 ),
               ),
@@ -410,6 +429,7 @@ class _UpNextSection extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 14.sp,
+                        color: Colors.black,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -28,13 +29,28 @@ class _SplashPageState extends State<SplashPage>
 
     _controller.forward();
 
-    // Mock navigation delay
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        // Will implement auth check later to go to /auth or /home
-        context.go('/auth');
-      }
-    });
+    _navigateToNextScreen();
+  }
+
+  Future<void> _navigateToNextScreen() async {
+    // Wait for the animation to finish + check shared preferences concurrently
+    final prefsFuture = SharedPreferences.getInstance();
+
+    await Future.wait([
+      Future.delayed(const Duration(seconds: 2)), // Matches animation duration
+      prefsFuture,
+    ]);
+
+    if (!mounted) return;
+
+    final prefs = await prefsFuture;
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+    if (isLoggedIn) {
+      context.go('/home');
+    } else {
+      context.go('/auth');
+    }
   }
 
   @override
@@ -54,11 +70,7 @@ class _SplashPageState extends State<SplashPage>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.play_circle_filled, // Temporary YouTube Logo
-                color: Colors.red,
-                size: 100.sp,
-              ),
+              Image.asset('assets/images/youtube_icon.png', width: 100.w),
               SizedBox(height: 10.h),
               Text(
                 'YouTube',

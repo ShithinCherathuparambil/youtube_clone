@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "104675211385",
+    "project_id": "youtube-clone-flutter-app",
+    "storage_bucket": "youtube-clone-flutter-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:104675211385:android:e7bf19778a541d5ab07ca8",
+        "android_client_info": {
+          "package_name": "com.youtube.clone.youtube_clone"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuxIiJoPuFb9AOOjJoyxCj4zzZ7NiZWDQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

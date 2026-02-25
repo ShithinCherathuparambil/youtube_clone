@@ -28,10 +28,25 @@ final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
   routes: [
     GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
-    GoRoute(path: '/auth', builder: (context, state) => const AuthPage()),
+    GoRoute(
+      path: '/auth',
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const AuthPage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    ),
     StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) {
-        return MainNavigationPage(navigationShell: navigationShell);
+      pageBuilder: (context, state, navigationShell) {
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: MainNavigationPage(navigationShell: navigationShell),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        );
       },
       branches: [
         StatefulShellBranch(

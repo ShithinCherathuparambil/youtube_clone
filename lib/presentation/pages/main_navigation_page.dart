@@ -1,20 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../core/constants/youtube_icons.dart';
 
 class MainNavigationPage extends StatelessWidget {
   const MainNavigationPage({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
-  void _onTap(int index) {
+  void _onTap(BuildContext context, int index) {
     if (index == 2) {
-      // Add button tap inside bottom nav
+      _showCreateBottomSheet(context);
       return;
     }
     navigationShell.goBranch(
       index,
       initialLocation: index == navigationShell.currentIndex,
+    );
+  }
+
+  void _showCreateBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const _CreateBottomSheet(),
     );
   }
 
@@ -24,7 +36,7 @@ class MainNavigationPage extends StatelessWidget {
       body: navigationShell,
       bottomNavigationBar: _YoutubeBottomNavBar(
         currentIndex: navigationShell.currentIndex,
-        onTap: _onTap,
+        onTap: (index) => _onTap(context, index),
       ),
     );
   }
@@ -38,30 +50,39 @@ class _YoutubeBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = currentIndex == 1;
+    final bgColor = isDark ? Colors.black : Colors.white;
+    final itemColor = isDark ? Colors.white : Colors.black;
+    final borderColor = isDark ? Colors.grey[800]! : const Color(0xFFE0E0E0);
+
     return Container(
-      color: Colors.white,
+      color: bgColor,
       child: SafeArea(
         top: false,
         child: Container(
-          height: 76.h,
+          height: 56.h,
           padding: EdgeInsets.symmetric(horizontal: 4.w),
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: Color(0xFFE0E0E0))),
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: borderColor, width: 0.5)),
           ),
           child: Row(
             children: [
               _NavItem(
                 index: 0,
                 currentIndex: currentIndex,
-                icon: Icons.home_filled,
+                activeIcon: Icons.home,
+                inactiveIcon: Icons.home_outlined,
                 label: 'Home',
+                isDark: isDark,
                 onTap: onTap,
               ),
               _NavItem(
                 index: 1,
                 currentIndex: currentIndex,
-                icon: Icons.play_circle_outline_rounded,
+                activeSvg: YoutubeIcons.shortsFilled,
+                inactiveSvg: YoutubeIcons.shortsOutline,
                 label: 'Shorts',
+                isDark: isDark,
                 onTap: onTap,
               ),
               Expanded(
@@ -69,13 +90,17 @@ class _YoutubeBottomNavBar extends StatelessWidget {
                   onTap: () => onTap(2),
                   child: Center(
                     child: Container(
-                      width: 50.w,
-                      height: 50.w,
+                      width: 40.w,
+                      height: 40.w,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.black, width: 1.4),
+                        border: Border.all(color: itemColor, width: 1.2),
                       ),
-                      child: Icon(Icons.add, size: 38.sp, color: Colors.black),
+                      child: Icon(
+                        FontAwesomeIcons.plus,
+                        size: 24.sp,
+                        color: itemColor,
+                      ),
                     ),
                   ),
                 ),
@@ -83,15 +108,20 @@ class _YoutubeBottomNavBar extends StatelessWidget {
               _NavItem(
                 index: 3,
                 currentIndex: currentIndex,
-                icon: Icons.subscriptions_outlined,
+                activeIcon: Icons.subscriptions,
+                inactiveIcon: Icons.subscriptions_outlined,
                 label: 'Subscriptions',
+                isDark: isDark,
                 onTap: onTap,
               ),
               _NavItem(
                 index: 4,
                 currentIndex: currentIndex,
-                icon: Icons.account_circle_outlined,
+                activeIcon: FontAwesomeIcons.folder,
+                inactiveIcon: FontAwesomeIcons.folder,
+                avatarUrl: 'https://picsum.photos/id/1027/100/100',
                 label: 'You',
+                isDark: isDark,
                 onTap: onTap,
               ),
             ],
@@ -106,39 +136,197 @@ class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.index,
     required this.currentIndex,
-    required this.icon,
+    this.activeIcon,
+    this.inactiveIcon,
+    this.activeSvg,
+    this.inactiveSvg,
+    this.avatarUrl,
     required this.label,
+    required this.isDark,
     required this.onTap,
   });
 
   final int index;
   final int currentIndex;
-  final IconData icon;
+  final IconData? activeIcon;
+  final IconData? inactiveIcon;
+  final String? activeSvg;
+  final String? inactiveSvg;
+  final String? avatarUrl;
   final String label;
+  final bool isDark;
   final ValueChanged<int> onTap;
 
   @override
   Widget build(BuildContext context) {
     final selected = index == currentIndex;
+    final itemColor = isDark ? Colors.white : Colors.black;
+
     return Expanded(
       child: InkWell(
         onTap: () => onTap(index),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 30.sp,
-              color: selected ? Colors.black : Colors.black87,
-            ),
+            if (avatarUrl != null)
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: selected
+                      ? Border.all(color: itemColor, width: 2)
+                      : null,
+                ),
+                child: CircleAvatar(
+                  radius: 13.sp,
+                  backgroundImage: NetworkImage(avatarUrl!),
+                ),
+              )
+            else if (activeSvg != null && inactiveSvg != null)
+              SvgPicture.string(
+                selected ? activeSvg! : inactiveSvg!,
+                height: 24.sp,
+                width: 24.sp,
+                colorFilter: ColorFilter.mode(itemColor, BlendMode.srcIn),
+              )
+            else
+              Icon(
+                selected ? activeIcon : inactiveIcon,
+                size: 26.sp,
+                color: itemColor,
+              ),
             SizedBox(height: 2.h),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12.sp,
-                color: Colors.black,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 10.sp,
+                color: itemColor,
+                fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CreateBottomSheet extends StatelessWidget {
+  const _CreateBottomSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16.r),
+          topRight: Radius.circular(16.r),
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Create',
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, size: 24.sp, color: Colors.black),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            _CreateActionItem(
+              iconSvg: YoutubeIcons.shortsOutline,
+              iconColor: Colors.black,
+              label: 'Create a Short',
+              onTap: () => Navigator.pop(context),
+            ),
+            _CreateActionItem(
+              iconData: FontAwesomeIcons.arrowUpFromBracket,
+              iconColor: Colors.black,
+              label: 'Upload a video',
+              onTap: () => Navigator.pop(context),
+            ),
+            _CreateActionItem(
+              iconData: FontAwesomeIcons.satelliteDish,
+              iconColor: Colors.black,
+              label: 'Go Live',
+              onTap: () => Navigator.pop(context),
+            ),
+            _CreateActionItem(
+              iconData: FontAwesomeIcons.pen,
+              iconColor: Colors.black,
+              label: 'Create a post',
+              onTap: () => Navigator.pop(context),
+            ),
+            SizedBox(height: 16.h),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CreateActionItem extends StatelessWidget {
+  const _CreateActionItem({
+    this.iconData,
+    this.iconSvg,
+    required this.iconColor,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData? iconData;
+  final String? iconSvg;
+  final Color iconColor;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        child: Row(
+          children: [
+            Container(
+              width: 44.w,
+              height: 44.w,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: iconSvg != null
+                    ? SvgPicture.string(
+                        iconSvg!,
+                        width: 22.sp,
+                        height: 22.sp,
+                        colorFilter: ColorFilter.mode(
+                          iconColor,
+                          BlendMode.srcIn,
+                        ),
+                      )
+                    : Icon(iconData, size: 18.sp, color: iconColor),
+              ),
+            ),
+            SizedBox(width: 16.w),
+            Text(
+              label,
+              style: TextStyle(fontSize: 16.sp, color: Colors.black),
             ),
           ],
         ),

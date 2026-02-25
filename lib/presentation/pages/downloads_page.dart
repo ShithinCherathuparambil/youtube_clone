@@ -2,11 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/download_item.dart';
 import '../bloc/download/download_manager_cubit.dart';
 import '../bloc/download/download_manager_state.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DownloadsPage extends StatefulWidget {
   const DownloadsPage({super.key});
@@ -120,7 +120,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                   backgroundColor: _selectedItems.isEmpty
                       ? Colors.grey
                       : Colors.red,
-                  icon: const Icon(Icons.delete, color: Colors.white),
+                  icon: const Icon(FontAwesomeIcons.trash, color: Colors.white),
                   label: Text(
                     'Delete (${_selectedItems.length})',
                     style: const TextStyle(color: Colors.white),
@@ -143,11 +143,21 @@ class _DownloadsPageState extends State<DownloadsPage> {
       ),
       actions: [
         IconButton(
-          icon: Icon(_isSelectionMode ? Icons.close : Icons.checklist),
+          icon: Icon(
+            _isSelectionMode
+                ? FontAwesomeIcons.xmark
+                : FontAwesomeIcons.listCheck,
+          ),
           onPressed: _toggleSelectionMode,
         ),
-        IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-        IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
+        IconButton(
+          icon: const Icon(FontAwesomeIcons.magnifyingGlass),
+          onPressed: () {},
+        ),
+        IconButton(
+          icon: const Icon(FontAwesomeIcons.ellipsisVertical),
+          onPressed: () {},
+        ),
       ],
     );
   }
@@ -356,7 +366,11 @@ class _DownloadsPageState extends State<DownloadsPage> {
                   ),
                 ),
                 child: isSelected
-                    ? Icon(Icons.check, size: 16.sp, color: Colors.white)
+                    ? Icon(
+                        FontAwesomeIcons.check,
+                        size: 16.sp,
+                        color: Colors.white,
+                      )
                     : null,
               ),
             ),
