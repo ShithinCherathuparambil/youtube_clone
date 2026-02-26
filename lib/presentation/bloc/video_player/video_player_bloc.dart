@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:video_player/video_player.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 part 'video_player_event.dart';
 part 'video_player_state.dart';
@@ -28,7 +29,27 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerAppState> {
     emit(state.copyWith(status: VideoPlayerStatus.loading, error: null));
     try {
       await state.controller?.dispose();
-      final controller = VideoPlayerController.networkUrl(Uri.parse(event.url));
+
+      String playableUrl = event.url;
+
+      // Extract raw video URL if it's a YouTube link
+      if (event.url.contains('youtube.com') || event.url.contains('youtu.be')) {
+        final yt = YoutubeExplode();
+        try {
+          final videoId = VideoId.parseVideoId(event.url);
+          if (videoId != null) {
+            final manifest = await yt.videos.streamsClient.getManifest(videoId);
+            final streamInfo = manifest.muxed.withHighestBitrate();
+            playableUrl = streamInfo.url.toString();
+          }
+        } finally {
+          yt.close();
+        }
+      }
+
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(playableUrl),
+      );
       await controller.initialize();
       await controller.setVolume(state.volume);
       await controller.setPlaybackSpeed(state.playbackSpeed);
@@ -63,7 +84,12 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerAppState> {
       }
       emit(state.copyWith(status: VideoPlayerStatus.ready, error: null));
     } catch (e) {
-      emit(state.copyWith(status: VideoPlayerStatus.error, error: 'Play/pause failed: $e'));
+      emit(
+        state.copyWith(
+          status: VideoPlayerStatus.error,
+          error: 'Play/pause failed: $e',
+        ),
+      );
     }
   }
 
@@ -77,7 +103,12 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerAppState> {
       await controller.seekTo(event.position);
       emit(state.copyWith(status: VideoPlayerStatus.ready, error: null));
     } catch (e) {
-      emit(state.copyWith(status: VideoPlayerStatus.error, error: 'Seek failed: $e'));
+      emit(
+        state.copyWith(
+          status: VideoPlayerStatus.error,
+          error: 'Seek failed: $e',
+        ),
+      );
     }
   }
 
@@ -90,7 +121,12 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerAppState> {
       await state.controller?.setPlaybackSpeed(speed);
       emit(state.copyWith(playbackSpeed: speed, error: null));
     } catch (e) {
-      emit(state.copyWith(status: VideoPlayerStatus.error, error: 'Speed change failed: $e'));
+      emit(
+        state.copyWith(
+          status: VideoPlayerStatus.error,
+          error: 'Speed change failed: $e',
+        ),
+      );
     }
   }
 
@@ -103,7 +139,12 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerAppState> {
       await state.controller?.setVolume(next);
       emit(state.copyWith(volume: next, error: null));
     } catch (e) {
-      emit(state.copyWith(status: VideoPlayerStatus.error, error: 'Volume update failed: $e'));
+      emit(
+        state.copyWith(
+          status: VideoPlayerStatus.error,
+          error: 'Volume update failed: $e',
+        ),
+      );
     }
   }
 
@@ -112,23 +153,33 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerAppState> {
     Emitter<VideoPlayerAppState> emit,
   ) {
     try {
-      final next = min(1.0, max(0.0, state.brightness + event.delta)).toDouble();
+      final next = min(
+        1.0,
+        max(0.0, state.brightness + event.delta),
+      ).toDouble();
       // Hook here with system brightness plugin if required.
       emit(state.copyWith(brightness: next, error: null));
     } catch (e) {
-      emit(state.copyWith(status: VideoPlayerStatus.error, error: 'Brightness update failed: $e'));
+      emit(
+        state.copyWith(
+          status: VideoPlayerStatus.error,
+          error: 'Brightness update failed: $e',
+        ),
+      );
     }
   }
 
-  void _onPipToggled(
-    VideoPipToggled event,
-    Emitter<VideoPlayerAppState> emit,
-  ) {
+  void _onPipToggled(VideoPipToggled event, Emitter<VideoPlayerAppState> emit) {
     try {
       // Hook here with platform-specific PIP plugin as needed.
       emit(state.copyWith(pipEnabled: !state.pipEnabled, error: null));
     } catch (e) {
-      emit(state.copyWith(status: VideoPlayerStatus.error, error: 'PIP toggle failed: $e'));
+      emit(
+        state.copyWith(
+          status: VideoPlayerStatus.error,
+          error: 'PIP toggle failed: $e',
+        ),
+      );
     }
   }
 

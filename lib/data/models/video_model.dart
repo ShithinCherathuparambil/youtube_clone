@@ -1,3 +1,4 @@
+import '../../core/utils/duration_parser.dart';
 import '../../domain/entities/video.dart';
 
 class VideoModel extends Video {
@@ -13,15 +14,32 @@ class VideoModel extends Video {
   });
 
   factory VideoModel.fromMap(Map<String, dynamic> map) {
+    final snippet = map['snippet'] as Map<String, dynamic>? ?? {};
+    final contentDetails = map['contentDetails'] as Map<String, dynamic>? ?? {};
+    final statistics = map['statistics'] as Map<String, dynamic>? ?? {};
+    final thumbnails = snippet['thumbnails'] as Map<String, dynamic>? ?? {};
+    final highThumbnail = thumbnails['high'] as Map<String, dynamic>? ?? {};
+
+    String videoId = '';
+    if (map['id'] is String) {
+      videoId = map['id'] as String;
+    } else if (map['id'] is Map<String, dynamic>) {
+      videoId = (map['id'] as Map<String, dynamic>)['videoId'] as String? ?? '';
+    }
+
     return VideoModel(
-      id: map['id'] as String,
-      title: map['title'] as String,
-      channelName: map['channelName'] as String,
-      thumbnailUrl: map['thumbnailUrl'] as String,
-      videoUrl: map['videoUrl'] as String,
-      duration: Duration(seconds: (map['durationSeconds'] as num).toInt()),
-      views: (map['views'] as num).toInt(),
-      publishedAt: DateTime.parse(map['publishedAt'] as String),
+      id: videoId,
+      title: snippet['title'] as String? ?? 'Unknown Title',
+      channelName: snippet['channelTitle'] as String? ?? 'Unknown Channel',
+      thumbnailUrl: highThumbnail['url'] as String? ?? '',
+      videoUrl: 'https://www.youtube.com/watch?v=$videoId',
+      duration: DurationParser.parseDuration(
+        contentDetails['duration'] as String? ?? '',
+      ),
+      views: int.tryParse(statistics['viewCount']?.toString() ?? '0') ?? 0,
+      publishedAt:
+          DateTime.tryParse(snippet['publishedAt'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 

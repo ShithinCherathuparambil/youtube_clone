@@ -1,9 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../core/constants/youtube_icons.dart';
+import '../../core/usecases/usecase.dart';
+import '../../domain/entities/channel.dart';
+import '../../domain/usecases/get_popular_channels.dart';
+import '../../injection_container.dart';
+import 'search_page.dart';
 
 class SubscriptionsPage extends StatefulWidget {
   static const route = '/subscriptions';
@@ -14,38 +21,33 @@ class SubscriptionsPage extends StatefulWidget {
 }
 
 class _SubscriptionsPageState extends State<SubscriptionsPage> {
-  final List<Map<String, dynamic>> _channels = [
-    {
-      'name': 'JithinRaj',
-      'avatar': 'https://picsum.photos/id/1005/200/200',
-      'hasNew': true,
-    },
-    {
-      'name': 'Brototyp...',
-      'avatar': 'https://picsum.photos/id/1011/200/200',
-      'hasNew': true,
-    },
-    {
-      'name': 'Ajith Bud...',
-      'avatar': 'https://picsum.photos/id/1012/200/200',
-      'hasNew': false,
-    },
-    {
-      'name': 'alexplain',
-      'avatar': 'https://picsum.photos/id/1025/200/200',
-      'hasNew': false,
-    },
-    {
-      'name': 'Patrick ...',
-      'avatar': 'https://picsum.photos/id/1027/200/200',
-      'hasNew': true,
-    },
-    {
-      'name': 'A',
-      'avatar': 'https://picsum.photos/id/1035/200/200',
-      'hasNew': false,
-    },
-  ];
+  bool _isLoadingChannels = true;
+  String? _channelsError;
+  List<Channel> _channels = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchChannels();
+  }
+
+  Future<void> _fetchChannels() async {
+    final getChannels = sl<GetPopularChannels>();
+    final result = await getChannels(NoParams());
+
+    if (!mounted) return;
+
+    result.fold(
+      (failure) => setState(() {
+        _isLoadingChannels = false;
+        _channelsError = failure.message;
+      }),
+      (channels) => setState(() {
+        _isLoadingChannels = false;
+        _channels = channels;
+      }),
+    );
+  }
 
   final List<String> _filters = [
     'All',
@@ -170,7 +172,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
             FontAwesomeIcons.magnifyingGlass,
             color: Colors.black,
           ),
-          onPressed: () {},
+          onPressed: () => context.push(SearchPage.route),
         ),
         Padding(
           padding: EdgeInsets.only(right: 12.w),
@@ -186,6 +188,27 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
   }
 
   Widget _buildChannelList() {
+    if (_isLoadingChannels) {
+      return SizedBox(
+        height: 100.h,
+        child: const Center(
+          child: CircularProgressIndicator(color: Colors.red),
+        ),
+      );
+    }
+
+    if (_channelsError != null) {
+      return SizedBox(
+        height: 100.h,
+        child: Center(
+          child: Text(
+            'Error loading channels',
+            style: TextStyle(color: Colors.grey[700]),
+          ),
+        ),
+      );
+    }
+
     return SizedBox(
       height: 100.h,
       child: ListView.builder(
@@ -220,29 +243,32 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                   children: [
                     CircleAvatar(
                       radius: 30.r,
-                      backgroundImage: CachedNetworkImageProvider(
-                        channel['avatar'],
-                      ),
+                      backgroundColor: Colors.grey[200],
+                      backgroundImage: channel.thumbnailUrl.isNotEmpty
+                          ? CachedNetworkImageProvider(channel.thumbnailUrl)
+                          : null,
+                      child: channel.thumbnailUrl.isEmpty
+                          ? Icon(Icons.person, color: Colors.grey[400])
+                          : null,
                     ),
-                    if (channel['hasNew'])
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 14.w,
-                          height: 14.w,
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 14.w,
+                        height: 14.w,
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
                         ),
                       ),
+                    ),
                   ],
                 ),
                 SizedBox(height: 6.h),
                 Text(
-                  channel['name'],
+                  channel.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

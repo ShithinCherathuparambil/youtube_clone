@@ -3,7 +3,9 @@ import 'package:injectable/injectable.dart';
 
 import '../../core/error/exceptions.dart';
 import '../../core/error/failures.dart';
-import '../../domain/entities/video.dart';
+import '../../domain/entities/channel.dart';
+import '../../domain/entities/comment.dart';
+import '../../domain/entities/paginated_videos.dart';
 import '../../domain/repositories/video_repository.dart';
 import '../datasources/video_remote_data_source.dart';
 
@@ -14,10 +16,70 @@ class VideoRepositoryImpl implements VideoRepository {
   final VideoRemoteDataSource _remoteDataSource;
 
   @override
-  Future<Either<Failure, List<Video>>> getHomeVideos() async {
+  Future<Either<Failure, PaginatedVideos>> getHomeVideos({
+    String? pageToken,
+  }) async {
     try {
-      final videos = await _remoteDataSource.getHomeVideos();
-      return Right(videos);
+      final result = await _remoteDataSource.getHomeVideos(
+        pageToken: pageToken,
+      );
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unknown error: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PaginatedVideos>> getShorts({
+    String? pageToken,
+  }) async {
+    try {
+      final result = await _remoteDataSource.getShorts(pageToken: pageToken);
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unknown error: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Comment>>> getComments(String videoId) async {
+    try {
+      final result = await _remoteDataSource.getComments(videoId);
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unknown error: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Channel>>> getPopularChannels() async {
+    try {
+      final result = await _remoteDataSource.getPopularChannels();
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unknown error: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PaginatedVideos>> searchVideos(
+    String query, {
+    String? pageToken,
+  }) async {
+    try {
+      final result = await _remoteDataSource.searchVideos(
+        query,
+        pageToken: pageToken,
+      );
+      return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {

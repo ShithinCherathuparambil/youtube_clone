@@ -15,7 +15,11 @@ import 'domain/repositories/video_repository.dart';
 import 'domain/repositories/auth_repository.dart';
 import 'data/repositories/firebase_auth_repository_impl.dart';
 import 'domain/usecases/get_cached_downloads.dart';
+import 'domain/usecases/get_comments.dart';
 import 'domain/usecases/get_home_videos.dart';
+import 'domain/usecases/get_popular_channels.dart';
+import 'domain/usecases/get_shorts.dart';
+import 'domain/usecases/search_videos.dart';
 import 'domain/usecases/start_encrypted_download.dart';
 import 'presentation/bloc/auth/auth_bloc.dart';
 import 'presentation/bloc/download/download_manager_cubit.dart';
@@ -49,7 +53,11 @@ Future<void> init() async {
     ..registerLazySingleton<AuthRepository>(
       () => FirebaseAuthRepositoryImpl(sl()),
     )
+    ..registerLazySingleton(() => GetComments(sl()))
     ..registerLazySingleton(() => GetHomeVideos(sl()))
+    ..registerLazySingleton(() => GetPopularChannels(sl()))
+    ..registerLazySingleton(() => GetShorts(sl()))
+    ..registerLazySingleton(() => SearchVideos(sl()))
     ..registerLazySingleton(() => StartEncryptedDownload(sl()))
     ..registerLazySingleton(() => GetCachedDownloads(sl()))
     ..registerFactory(() => AuthBloc(sl()))

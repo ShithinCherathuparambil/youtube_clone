@@ -10,6 +10,7 @@ import '../../presentation/pages/downloads_page.dart';
 import '../../presentation/pages/splash_page.dart';
 import '../../presentation/pages/auth_page.dart';
 import '../../presentation/pages/main_navigation_page.dart';
+import '../../presentation/pages/search_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
@@ -110,13 +111,16 @@ final GoRouter appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         final args = state.extra as Map<String, dynamic>? ?? {};
-        return WatchPage(
-          videoUrl:
-              args['videoUrl'] as String? ??
-              'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4',
-          title: args['title'] as String? ?? 'Video',
-        );
+        final videoUrl = args['videoUrl'] as String? ?? '';
+        final title = args['title'] as String? ?? '';
+        final id = args['id'] as String? ?? '';
+        return WatchPage(videoUrl: videoUrl, title: title, id: id);
       },
+    ),
+    GoRoute(
+      path: SearchPage.route,
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const SearchPage(),
     ),
   ],
 );
