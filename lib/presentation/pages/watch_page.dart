@@ -260,6 +260,176 @@ class _CustomVideoPlayerControlsState
     );
   }
 
+  String _selectedQuality = 'Auto (1080p)';
+
+  void _showSettingsBottomSheet() {
+    _startHideTimer();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(
+                  Icons.speed_rounded,
+                  color: Theme.of(context).iconTheme.color,
+                ),
+                title: Text(
+                  'Playback speed',
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+                trailing: Text(
+                  '${widget.controller.value.playbackSpeed}x',
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showPlaybackSpeedBottomSheet();
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.hd_rounded,
+                  color: Theme.of(context).iconTheme.color,
+                ),
+                title: Text(
+                  'Quality',
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+                trailing: Text(
+                  _selectedQuality,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showQualityBottomSheet();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPlaybackSpeedBottomSheet() {
+    final speeds = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: speeds.length,
+            itemBuilder: (context, index) {
+              final speed = speeds[index];
+              final isSelected = widget.controller.value.playbackSpeed == speed;
+              return ListTile(
+                leading: isSelected
+                    ? Icon(
+                        Icons.check,
+                        color: Theme.of(context).iconTheme.color,
+                      )
+                    : SizedBox(width: 24.w),
+                title: Text(
+                  speed == 1.0 ? 'Normal' : '${speed}x',
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+                onTap: () {
+                  context.read<VideoPlayerBloc>().add(VideoSpeedChanged(speed));
+                  Navigator.pop(context);
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showQualityBottomSheet() {
+    final qualities = [
+      '1080p Premium HD',
+      '1080p60 HD',
+      '720p60 HD',
+      '480p',
+      '360p',
+      '240p',
+      '144p',
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: qualities.length,
+            itemBuilder: (context, index) {
+              final quality = qualities[index];
+              final isSelected =
+                  quality == _selectedQuality ||
+                  (_selectedQuality.startsWith('Auto') &&
+                      quality == '1080p60 HD');
+              return ListTile(
+                leading: isSelected
+                    ? Icon(
+                        Icons.check,
+                        color: Theme.of(context).iconTheme.color,
+                      )
+                    : SizedBox(width: 24.w),
+                title: Text(
+                  quality,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+                onTap: () {
+                  setState(() {
+                    _selectedQuality = quality;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Quality changed to $quality')),
+                  );
+                  Navigator.pop(context);
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   void _toggleFullScreen() {
     final orientation = MediaQuery.of(context).orientation;
     if (orientation == Orientation.portrait) {
@@ -388,6 +558,18 @@ class _CustomVideoPlayerControlsState
                 fit: StackFit.expand,
                 children: [
                   Container(color: Colors.black54),
+                  Positioned(
+                    top: 16.h,
+                    right: 16.w,
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.settings_rounded,
+                        color: Colors.white,
+                        size: 24.sp,
+                      ),
+                      onPressed: _showSettingsBottomSheet,
+                    ),
+                  ),
                   Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -448,88 +630,36 @@ class _CustomVideoPlayerControlsState
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.speed_rounded,
-                                    color: Colors.white,
+                            const Spacer(),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.picture_in_picture_alt_rounded,
+                                color: Colors.white,
+                              ),
+
+                              onPressed: () {
+                                _startHideTimer();
+                                context.read<VideoPlayerBloc>().add(
+                                  VideoPipToggled(),
+                                );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Picture-in-Picture activated',
+                                    ),
                                   ),
-                                  onPressed: () {
-                                    _startHideTimer();
-                                    final currentSpeed =
-                                        widget.controller.value.playbackSpeed;
-                                    final newSpeed = currentSpeed >= 2.0
-                                        ? 0.5
-                                        : currentSpeed + 0.25;
-                                    context.read<VideoPlayerBloc>().add(
-                                      VideoSpeedChanged(newSpeed),
-                                    );
-                                  },
-                                ),
-                                ValueListenableBuilder(
-                                  valueListenable: widget.controller,
-                                  builder:
-                                      (context, VideoPlayerValue value, child) {
-                                        return Text(
-                                          '${value.playbackSpeed}x',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12.sp,
-                                          ),
-                                        );
-                                      },
-                                ),
-                              ],
+                                );
+                              },
                             ),
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.hd_rounded,
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: () {
-                                    _startHideTimer();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Quality changed to 1080p',
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.picture_in_picture_alt_rounded,
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: () {
-                                    _startHideTimer();
-                                    context.read<VideoPlayerBloc>().add(
-                                      VideoPipToggled(),
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Picture-in-Picture activated',
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.fullscreen_rounded,
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: () {
-                                    _startHideTimer();
-                                    _toggleFullScreen();
-                                  },
-                                ),
-                              ],
+                            IconButton(
+                              icon: const Icon(
+                                Icons.fullscreen_rounded,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                _startHideTimer();
+                                _toggleFullScreen();
+                              },
                             ),
                           ],
                         ),
@@ -660,7 +790,7 @@ class _ChannelInfoSection extends StatelessWidget {
                       Icons.person,
                       color: Theme.of(
                         context,
-                      ).iconTheme.color?.withOpacity(0.5),
+                      ).iconTheme.color?.withValues(alpha: 0.5),
                     )
                   : null,
             ),
@@ -862,7 +992,7 @@ class _ActionButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(
             context,
-          ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+          ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(20.r),
         ),
         child: Row(
@@ -905,7 +1035,7 @@ class _DescriptionSectionState extends State<_DescriptionSection> {
         decoration: BoxDecoration(
           color: Theme.of(
             context,
-          ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+          ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Column(

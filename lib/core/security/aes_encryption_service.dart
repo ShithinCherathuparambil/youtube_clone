@@ -28,7 +28,9 @@ class AesEncryptionService {
       }
 
       final random = Random.secure();
-      final keyBytes = Uint8List.fromList(List<int>.generate(32, (_) => random.nextInt(256)));
+      final keyBytes = Uint8List.fromList(
+        List<int>.generate(32, (_) => random.nextInt(256)),
+      );
       await _secureStorage.write(key: _keyRef, value: base64Encode(keyBytes));
       return enc.Key(keyBytes);
     } catch (e) {
@@ -62,7 +64,10 @@ class AesEncryptionService {
       final iv = enc.IV(encryptedPayload.sublist(0, 16));
       final cipherBytes = encryptedPayload.sublist(16);
       final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
-      final decrypted = encrypter.decryptBytes(enc.Encrypted(cipherBytes), iv: iv);
+      final decrypted = encrypter.decryptBytes(
+        enc.Encrypted(cipherBytes),
+        iv: iv,
+      );
       return Uint8List.fromList(decrypted);
     } catch (e) {
       throw EncryptionException('Failed to decrypt bytes: $e');
@@ -78,7 +83,9 @@ class AesEncryptionService {
   }) async* {
     try {
       final encryptedPayload = await encryptedFile.readAsBytes();
-      final plainBytes = await decryptBytes(Uint8List.fromList(encryptedPayload));
+      final plainBytes = await decryptBytes(
+        Uint8List.fromList(encryptedPayload),
+      );
 
       for (var i = 0; i < plainBytes.length; i += outputChunkSize) {
         final end = (i + outputChunkSize < plainBytes.length)
@@ -88,6 +95,29 @@ class AesEncryptionService {
       }
     } catch (e) {
       throw EncryptionException('Failed to stream decrypt file: $e');
+    }
+  }
+
+  /// Decrypts to a temporary file for standard video player playback.
+  /// The file is created in the temp directory and should be deleted after use.
+  Future<File> decryptToTempFile(String videoId, String encryptedPath) async {
+    try {
+      final encryptedFile = File(encryptedPath);
+      if (!await encryptedFile.exists()) {
+        throw EncryptionException('Encrypted file not found');
+      }
+
+      final encryptedPayload = await encryptedFile.readAsBytes();
+      final plainBytes = await decryptBytes(
+        Uint8List.fromList(encryptedPayload),
+      );
+
+      final tempDir = Directory.systemTemp;
+      final tempFile = File('${tempDir.path}/temp_$videoId.mp4');
+      await tempFile.writeAsBytes(plainBytes, flush: true);
+      return tempFile;
+    } catch (e) {
+      throw EncryptionException('Failed to decrypt to temp file: $e');
     }
   }
 }

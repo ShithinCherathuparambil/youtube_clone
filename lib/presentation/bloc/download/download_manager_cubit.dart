@@ -10,7 +10,7 @@ import 'download_manager_state.dart';
 @injectable
 class DownloadManagerCubit extends Cubit<DownloadManagerState> {
   DownloadManagerCubit(this._startEncryptedDownload, this._getCachedDownloads)
-      : super(const DownloadManagerState());
+    : super(const DownloadManagerState());
 
   final StartEncryptedDownload _startEncryptedDownload;
   final GetCachedDownloads _getCachedDownloads;
@@ -19,8 +19,11 @@ class DownloadManagerCubit extends Cubit<DownloadManagerState> {
     emit(state.copyWith(isLoading: true, error: null));
     final result = await _getCachedDownloads(const NoParams());
     result.fold(
-      (failure) => emit(state.copyWith(isLoading: false, error: failure.message)),
-      (downloads) => emit(state.copyWith(isLoading: false, downloads: downloads, error: null)),
+      (failure) =>
+          emit(state.copyWith(isLoading: false, error: failure.message)),
+      (downloads) => emit(
+        state.copyWith(isLoading: false, downloads: downloads, error: null),
+      ),
     );
   }
 
@@ -36,10 +39,14 @@ class DownloadManagerCubit extends Cubit<DownloadManagerState> {
       outputPath: '',
       status: DownloadStatus.queued,
       progress: 0,
+      taskId: null,
     );
     _upsert(queued);
 
-    final downloading = queued.copyWith(status: DownloadStatus.downloading, progress: 0);
+    final downloading = queued.copyWith(
+      status: DownloadStatus.downloading,
+      progress: 0,
+    );
     _upsert(downloading);
 
     final result = await _startEncryptedDownload(
@@ -56,18 +63,15 @@ class DownloadManagerCubit extends Cubit<DownloadManagerState> {
       ),
     );
 
-    result.fold(
-      (failure) {
-        _upsert(
-          downloading.copyWith(
-            status: DownloadStatus.failed,
-            errorMessage: failure.message,
-          ),
-        );
-        emit(state.copyWith(error: failure.message));
-      },
-      (completed) => _upsert(completed),
-    );
+    result.fold((failure) {
+      _upsert(
+        downloading.copyWith(
+          status: DownloadStatus.failed,
+          errorMessage: failure.message,
+        ),
+      );
+      emit(state.copyWith(error: failure.message));
+    }, (completed) => _upsert(completed));
   }
 
   void _upsert(DownloadItem item) {

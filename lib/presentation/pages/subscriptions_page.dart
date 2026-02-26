@@ -6,13 +6,20 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:timeago/timeago.dart' as timeago;
+
 import '../../core/constants/youtube_icons.dart';
 import '../../core/usecases/usecase.dart';
 import '../../core/utils/image_extensions.dart';
 import '../../domain/entities/channel.dart';
+import '../../domain/entities/video.dart';
+import '../../domain/usecases/get_home_videos.dart';
 import '../../domain/usecases/get_popular_channels.dart';
+import '../../domain/usecases/get_shorts.dart';
 import '../../injection_container.dart';
+import '../widgets/short_card.dart';
 import 'search_page.dart';
+import 'shorts_page.dart';
 
 class SubscriptionsPage extends StatefulWidget {
   static const route = '/subscriptions';
@@ -27,10 +34,19 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
   String? _channelsError;
   List<Channel> _channels = [];
 
+  bool _isLoadingVideos = true;
+  List<Vido> _videos = [];
+
+  bool _isLoadingShorts = true;
+  List<Vido> _shorts = [];
+  String? _shortsNextPageToken;
+
   @override
   void initState() {
     super.initState();
     _fetchChannels();
+    _fetchVideos();
+    _fetchShorts();
   }
 
   Future<void> _fetchChannels() async {
@@ -51,14 +67,60 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
     );
   }
 
-  final List<String> _filters = [
-    'All',
-    'Today',
-    'Videos',
-    'Shorts',
-    'Live',
-    'Podcasts',
-  ];
+  Future<void> _fetchVideos() async {
+    final getHomeVideos = sl<GetHomeVideos>();
+    final result = await getHomeVideos(const GetHomeVideosParams());
+
+    if (!mounted) return;
+
+    result.fold(
+      (failure) => setState(() {
+        _isLoadingVideos = false;
+      }),
+      (paginated) => setState(() {
+        _isLoadingVideos = false;
+        _videos = paginated.videos;
+      }),
+    );
+  }
+
+  Future<void> _fetchShorts() async {
+    final getShorts = sl<GetShorts>();
+    final result = await getShorts(const GetHomeVideosParams());
+
+    if (!mounted) return;
+
+    result.fold(
+      (failure) => setState(() {
+        _isLoadingShorts = false;
+      }),
+      (paginated) => setState(() {
+        _isLoadingShorts = false;
+        _shorts = paginated.videos;
+        _shortsNextPageToken = paginated.nextPageToken;
+      }),
+    );
+  }
+
+  String _formatViews(int views) {
+    if (views >= 1000000) return '${(views / 1000000).toStringAsFixed(1)}M';
+    if (views >= 1000) return '${(views / 1000).toStringAsFixed(1)}K';
+    return views.toString();
+  }
+
+  String _formatDuration(Duration d) {
+    if (d.inSeconds == 0) return '';
+    final hours = d.inHours;
+    final minutes = d.inMinutes.remainder(60);
+    final seconds = d.inSeconds.remainder(60);
+    if (hours > 0) {
+      return '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    } else {
+      return '$minutes:${seconds.toString().padLeft(2, '0')}';
+    }
+  }
+
+  final List<String> _filters = ['All', 'Today', 'Videos', 'Shorts', 'Live'];
   String _selectedFilter = 'All';
 
   @override
@@ -118,17 +180,6 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
               height: 32.h,
             ),
             _buildPostShortsVideo(),
-            Padding(
-              padding: EdgeInsets.only(top: 24.h),
-              child: _buildRelevantVideoCard(
-                title: 'Building India\'s Smart Ports',
-                channel: 'btTV',
-                views: '4.5K views',
-                time: '2 hours ago',
-                duration: '45:12',
-                thumbUrl: 'https://picsum.photos/id/1023/400/225',
-              ),
-            ),
             SizedBox(height: 20.h),
           ],
         ),
@@ -269,7 +320,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                               Icons.person,
                               color: Theme.of(
                                 context,
-                              ).iconTheme.color?.withOpacity(0.5),
+                              ).iconTheme.color?.withValues(alpha: 0.5),
                             )
                           : null,
                     ),
@@ -373,340 +424,321 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
   }
 
   Widget _buildVideoGrid() {
+    if (_isLoadingVideos) {
+      return SizedBox(
+        height: 150.h,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      );
+    }
+
+    if (_videos.isEmpty) return const SizedBox.shrink();
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 12.w),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: _buildRelevantVideoCard(
-              title: 'ഭൂമിയിലെ ഏറ്റവും വലിയ ബാധ്യത ഉയരമാണ് | Height Explained',
-              channel: 'JR STUDIO Sci-Talk Malayalam',
-              views: '58K views',
-              time: '5 days ago',
-              duration: '12:02',
-              thumbUrl: 'https://picsum.photos/id/29/400/225',
-            ),
-          ),
+          if (_videos.isNotEmpty)
+            Expanded(child: _buildRelevantVideoCard(video: _videos[0])),
           SizedBox(width: 8.w),
-          Expanded(
-            child: _buildRelevantVideoCard(
-              title: 'മുന്നുപേർക്കും ആഘോഷിച്ചു',
-              channel: 'Aswin Madappally',
-              views: '118K views',
-              time: '4 days ago',
-              duration: '18:45',
-              thumbUrl: 'https://picsum.photos/id/35/400/225',
-              badge: 'DEATH SENTENCE',
-            ),
-          ),
+          if (_videos.length > 1)
+            Expanded(child: _buildRelevantVideoCard(video: _videos[1])),
         ],
       ),
     );
   }
 
-  Widget _buildRelevantVideoCard({
-    required String title,
-    required String channel,
-    required String views,
-    required String time,
-    required String duration,
-    required String thumbUrl,
-    String? badge,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8.r),
-              child: CachedNetworkImage(
-                imageUrl: thumbUrl,
-                height: 100.h,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                ),
-              ),
-            ),
-            if (badge != null)
-              Positioned(
-                top: 4.h,
-                left: 4.w,
-                child: Text(
-                  badge,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 8.sp,
-                    fontWeight: FontWeight.bold,
-                    backgroundColor: Colors.black54,
-                  ),
-                ),
-              ),
-            Positioned(
-              bottom: 4.h,
-              right: 4.w,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(4.r),
-                ),
-                child: Text(
-                  duration,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 8.h),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                  height: 1.2,
-                ),
-              ),
-            ),
-            Icon(
-              FontAwesomeIcons.ellipsisVertical,
-              size: 16.sp,
-              color: Theme.of(context).iconTheme.color,
-            ),
-          ],
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          channel,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 11.sp,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        Text(
-          '$views • $time',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 11.sp,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildShortsGrid() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12.w),
-      child: Row(
+  Widget _buildRelevantVideoCard({required Vido video}) {
+    return GestureDetector(
+      onTap: () {
+        context.push(
+          '/watch',
+          extra: {
+            'videoUrl': video.videoUrl,
+            'title': video.title,
+            'id': video.id,
+            'channelName': video.channelName,
+            'channelId': video.channelId,
+          },
+        );
+      },
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: _buildShortCard(
-              title: '8 വർഷം കൽപ്പണി ഇന്നിപ്പോൾ Software E...',
-              views: '3.4K views',
-              thumbUrl: 'https://picsum.photos/id/45/300/500',
-            ),
-          ),
-          SizedBox(width: 8.w),
-          Expanded(
-            child: _buildShortCard(
-              title: '"അവൻമാരോട് ഒന്നു വരാൻ പറയു...ക്യാമറ ...',
-              views: 'No views',
-              thumbUrl: 'https://picsum.photos/id/65/300/500',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildShortCard({
-    required String title,
-    required String views,
-    required String thumbUrl,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8.r),
-              child: CachedNetworkImage(
-                imageUrl: thumbUrl,
-                height: 240.h,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: (context, url) =>
-                    Container(color: Colors.grey[200]),
-              ),
-            ),
-            Positioned(
-              top: 8.h,
-              right: 8.w,
-              child: Icon(
-                FontAwesomeIcons.ellipsisVertical,
-                color: Colors.white,
-                size: 20.sp,
-              ),
-            ),
-            Positioned(
-              bottom: 8.h,
-              left: 8.w,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      shadows: const [
-                        Shadow(color: Colors.black54, blurRadius: 4),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    views,
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                      shadows: const [
-                        Shadow(color: Colors.black54, blurRadius: 4),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPostShortsVideo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.only(top: 24.h, bottom: 8.h),
-          child: Stack(
+          Stack(
             children: [
-              CachedNetworkImage(
-                imageUrl: 'https://picsum.photos/id/180/1280/720',
-                height: 220.h,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8.r),
+                child: CachedNetworkImage(
+                  imageUrl: video.thumbnailUrl,
+                  height: 100.h,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                  ),
                 ),
               ),
               Positioned(
-                bottom: 8.h,
-                right: 8.w,
+                bottom: 4.h,
+                right: 4.w,
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Colors.black.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(4.r),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        FontAwesomeIcons.wifi,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        size: 12.sp,
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        'LIVE',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    _formatDuration(video.duration),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12.w),
-          child: Row(
+          SizedBox(height: 8.h),
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 20.r,
-                backgroundImage: const CachedNetworkImageProvider(
-                  'https://picsum.photos/id/1011/200/200',
-                ),
-              ),
-              SizedBox(width: 12.w),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'IT Infrastructure Conclave: Sarbananda Sonowal On Building India\'s Smart Ports & Maritime Future',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      'Business Today • 3 watching',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                child: Text(
+                  video.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    height: 1.2,
+                  ),
                 ),
               ),
               Icon(
                 FontAwesomeIcons.ellipsisVertical,
-                size: 20.sp,
+                size: 16.sp,
                 color: Theme.of(context).iconTheme.color,
               ),
             ],
           ),
+          SizedBox(height: 4.h),
+          Text(
+            video.channelName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11.sp,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            '${_formatViews(video.views)} views • ${timeago.format(video.publishedAt)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11.sp,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShortsGrid() {
+    if (_isLoadingShorts) {
+      return SizedBox(
+        height: 240.h,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
-      ],
+      );
+    }
+
+    if (_shorts.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 12.w),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_shorts.isNotEmpty)
+            Expanded(
+              child: ShortCard(
+                title: _shorts[0].title,
+                views: '${_formatViews(_shorts[0].views)} views',
+                thumbUrl: _shorts[0].thumbnailUrl,
+                onTap: () {
+                  context.push(
+                    ShortsPage.route,
+                    extra: {
+                      'initialVideos': _shorts,
+                      'initialIndex': 0,
+                      'nextPageToken': _shortsNextPageToken,
+                    },
+                  );
+                },
+              ),
+            ),
+          SizedBox(width: 8.w),
+          if (_shorts.length > 1)
+            Expanded(
+              child: ShortCard(
+                title: _shorts[1].title,
+                views: '${_formatViews(_shorts[1].views)} views',
+                thumbUrl: _shorts[1].thumbnailUrl,
+                onTap: () {
+                  context.push(
+                    ShortsPage.route,
+                    extra: {
+                      'initialVideos': _shorts,
+                      'initialIndex': 1,
+                      'nextPageToken': _shortsNextPageToken,
+                    },
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostShortsVideo() {
+    if (_videos.length <= 2) return const SizedBox.shrink();
+
+    final video = _videos[2]; // Use the 3rd video
+
+    return GestureDetector(
+      onTap: () {
+        context.push(
+          '/watch',
+          extra: {
+            'videoUrl': video.videoUrl,
+            'title': video.title,
+            'id': video.id,
+            'channelName': video.channelName,
+            'channelId': video.channelId,
+          },
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: 24.h, bottom: 8.h),
+            child: Stack(
+              children: [
+                CachedNetworkImage(
+                  imageUrl: video.thumbnailUrl,
+                  height: 220.h,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                  ),
+                ),
+                Positioned(
+                  bottom: 8.h,
+                  right: 8.w,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 4.w,
+                      vertical: 2.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          FontAwesomeIcons.wifi,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          size: 12.sp,
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          'LIVE',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: () => context.push('/channel/${video.channelId}'),
+                  child: CircleAvatar(
+                    radius: 20.r,
+                    backgroundImage: CachedNetworkImageProvider(
+                      'https://ui-avatars.com/api/?name=${Uri.encodeComponent(video.channelName)}&background=random&format=png',
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        video.title,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          height: 1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        '${video.channelName} • ${_formatViews(video.views)} views • ${timeago.format(video.publishedAt)}',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  FontAwesomeIcons.ellipsisVertical,
+                  size: 20.sp,
+                  color: Theme.of(context).iconTheme.color,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

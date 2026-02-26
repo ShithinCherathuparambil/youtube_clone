@@ -7,6 +7,7 @@ import '../../domain/entities/download_item.dart';
 abstract class DownloadLocalDataSource {
   Future<void> cacheDownload(DownloadItem item);
   Future<List<DownloadItem>> getDownloads();
+  Future<void> deleteDownload(String videoId);
 }
 
 @LazySingleton(as: DownloadLocalDataSource)
@@ -37,6 +38,7 @@ class DownloadLocalDataSourceImpl implements DownloadLocalDataSource {
         'outputPath': item.outputPath,
         'status': item.status.name,
         'progress': item.progress,
+        'taskId': item.taskId,
         'errorMessage': item.errorMessage,
       });
     } catch (e) {

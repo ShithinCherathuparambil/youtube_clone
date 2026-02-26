@@ -157,19 +157,41 @@ class VideoRemoteDataSourceImpl implements VideoRemoteDataSource {
   @override
   Future<List<ChannelModel>> getPopularChannels() async {
     try {
-      final response = await _dioClient.dio.get<Map<String, dynamic>>(
-        'https://www.googleapis.com/youtube/v3/channels',
+      // 1. Fetch popular videos to get popular channel IDs
+      final videosResponse = await _dioClient.dio.get<Map<String, dynamic>>(
+        'https://www.googleapis.com/youtube/v3/videos',
         queryParameters: {
-          'part': 'snippet,statistics',
+          'part': 'snippet',
           'chart': 'mostPopular',
-          'maxResults': 10,
+          'maxResults': 15,
           'regionCode': 'US',
           'key': YouTubeApiKeys.apiKey,
         },
       );
 
-      final items = response.data?['items'] as List<dynamic>? ?? <dynamic>[];
-      final channels = items
+      final videoItems = videosResponse.data?['items'] as List<dynamic>? ?? [];
+      final channelIds = videoItems
+          .map((item) => item['snippet']['channelId'] as String?)
+          .where((id) => id != null)
+          .cast<String>()
+          .toSet()
+          .toList();
+
+      if (channelIds.isEmpty) return [];
+
+      // 2. Fetch channel details for those IDs
+      final channelsResponse = await _dioClient.dio.get<Map<String, dynamic>>(
+        'https://www.googleapis.com/youtube/v3/channels',
+        queryParameters: {
+          'part': 'snippet,statistics',
+          'id': channelIds.take(10).join(','),
+          'key': YouTubeApiKeys.apiKey,
+        },
+      );
+
+      final channelItems =
+          channelsResponse.data?['items'] as List<dynamic>? ?? <dynamic>[];
+      final channels = channelItems
           .cast<Map<String, dynamic>>()
           .map(ChannelModel.fromMap)
           .toList();

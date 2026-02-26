@@ -10,6 +10,7 @@ class DownloadItem extends Equatable {
     required this.outputPath,
     required this.status,
     required this.progress,
+    this.taskId,
     this.errorMessage,
   });
 
@@ -19,12 +20,14 @@ class DownloadItem extends Equatable {
   final String outputPath;
   final DownloadStatus status;
   final double progress;
+  final String? taskId;
   final String? errorMessage;
 
   DownloadItem copyWith({
     DownloadStatus? status,
     double? progress,
     String? outputPath,
+    String? taskId,
     String? errorMessage,
   }) {
     return DownloadItem(
@@ -34,18 +37,20 @@ class DownloadItem extends Equatable {
       outputPath: outputPath ?? this.outputPath,
       status: status ?? this.status,
       progress: progress ?? this.progress,
+      taskId: taskId ?? this.taskId,
       errorMessage: errorMessage,
     );
   }
 
   @override
   List<Object?> get props => [
-        videoId,
-        title,
-        sourceUrl,
-        outputPath,
-        status,
-        progress,
-        errorMessage,
-      ];
+    videoId,
+    title,
+    sourceUrl,
+    outputPath,
+    status,
+    progress,
+    taskId,
+    errorMessage,
+  ];
 }

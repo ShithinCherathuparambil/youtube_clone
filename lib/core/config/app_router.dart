@@ -140,7 +140,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const SearchPage(),
     ),
     GoRoute(
-      path: '/shorts_player',
+      path: ShortsPage.route,
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         final args = state.extra as Map<String, dynamic>? ?? {};

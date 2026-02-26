@@ -2,11 +2,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../data/services/background_download_service.dart';
 import '../../domain/entities/download_item.dart';
+import '../../injection_container.dart';
 import '../bloc/download/download_manager_cubit.dart';
 import '../bloc/download/download_manager_state.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DownloadsPage extends StatefulWidget {
   static const route = 'downloads';
@@ -71,7 +73,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                       crossAxisCount: 2,
                       crossAxisSpacing: 16.w,
                       mainAxisSpacing: 16.h,
-                      childAspectRatio: 0.8,
+                      childAspectRatio: 0.7,
                     ),
                     itemBuilder: (context, index) {
                       final item = downloads[index];
@@ -333,31 +335,80 @@ class _DownloadsPageState extends State<DownloadsPage> {
                   ],
                 ),
                 if (status == DownloadStatus.downloading)
-                  LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 4.h,
-                    color: Theme.of(context).colorScheme.primary,
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
+                  StreamBuilder<DownloadUpdate>(
+                    stream: sl<BackgroundDownloadService>().progressStream,
+                    builder: (context, snapshot) {
+                      double currentProgress = progress;
+                      if (snapshot.hasData && snapshot.data!.taskId == id) {
+                        currentProgress = snapshot.data!.progress;
+                      }
+                      return LinearProgressIndicator(
+                        value: currentProgress,
+                        minHeight: 4.h,
+                        color: Theme.of(context).colorScheme.primary,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                      );
+                    },
                   ),
                 Padding(
                   padding: EdgeInsets.all(8.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          if (status == DownloadStatus.downloading ||
+                              status == DownloadStatus.queued)
+                            PopupMenuButton<String>(
+                              icon: Icon(Icons.more_vert, size: 16.sp),
+                              padding: EdgeInsets.zero,
+                              onSelected: (value) {
+                                switch (value) {
+                                  case 'pause':
+                                    sl<BackgroundDownloadService>().pause(id);
+                                    break;
+                                  case 'resume':
+                                    sl<BackgroundDownloadService>().resume(id);
+                                    break;
+                                  case 'cancel':
+                                    sl<BackgroundDownloadService>().cancel(id);
+                                    break;
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'pause',
+                                  child: Text('Pause'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'resume',
+                                  child: Text('Resume'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'cancel',
+                                  child: Text('Cancel'),
+                                ),
+                              ],
+                            ),
+                        ],
                       ),
                       SizedBox(height: 4.h),
                       Text(
-                        'Channel Name • 240 MB',
+                        'Video • Encrypted',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -366,15 +417,28 @@ class _DownloadsPageState extends State<DownloadsPage> {
                         ),
                       ),
                       if (status == DownloadStatus.downloading)
-                        Padding(
-                          padding: EdgeInsets.only(top: 4.h),
-                          child: Text(
-                            '${(progress * 100).toStringAsFixed(0)}% downloading',
-                            style: TextStyle(
-                              fontSize: 11.sp,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
+                        StreamBuilder<DownloadUpdate>(
+                          stream:
+                              sl<BackgroundDownloadService>().progressStream,
+                          builder: (context, snapshot) {
+                            double currentProgress = progress;
+                            String statusText = 'downloading';
+                            if (snapshot.hasData &&
+                                snapshot.data!.taskId == id) {
+                              currentProgress = snapshot.data!.progress;
+                              statusText = snapshot.data!.status.name;
+                            }
+                            return Padding(
+                              padding: EdgeInsets.only(top: 4.h),
+                              child: Text(
+                                '${(currentProgress * 100).toStringAsFixed(0)}% $statusText',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                     ],
                   ),

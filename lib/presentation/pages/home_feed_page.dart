@@ -6,6 +6,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:youtube_clone/presentation/pages/shorts_page.dart';
 import '../../core/constants/youtube_icons.dart';
 import '../../core/usecases/usecase.dart';
 import '../../core/utils/image_extensions.dart';
@@ -15,6 +16,7 @@ import '../../domain/usecases/get_home_videos.dart';
 import '../../domain/usecases/get_shorts.dart';
 import '../../domain/usecases/get_video_categories.dart';
 import '../../injection_container.dart';
+import '../widgets/short_card.dart';
 import 'search_page.dart';
 
 class HomeFeedPage extends StatefulWidget {
@@ -133,8 +135,9 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
     if (_isFetchingNextPage ||
         _nextPageToken == null ||
         _isLoading ||
-        _error != null)
+        _error != null) {
       return;
+    }
 
     setState(() => _isFetchingNextPage = true);
 
@@ -391,10 +394,9 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
             children: [
               SvgPicture.string(
                 YoutubeIcons.shortsFilled,
-                color: Color(0xFFFF0000),
                 width: 24.sp,
                 height: 24.sp,
-                colorFilter: ColorFilter.mode(
+                colorFilter: const ColorFilter.mode(
                   Color(0xFFFF0000),
                   BlendMode.srcIn,
                 ),
@@ -428,13 +430,13 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
               final short = entry.value;
               return Padding(
                 padding: EdgeInsets.only(right: 12.w),
-                child: _buildShortCard(
+                child: ShortCard(
                   title: short.title,
                   views: '${_formatViewsShorts(short.views)} views',
                   thumbUrl: short.thumbnailUrl,
                   onTap: () {
                     context.push(
-                      '/shorts_player',
+                      ShortsPage.route,
                       extra: {
                         'initialVideos': _shorts,
                         'initialIndex': index,
@@ -463,78 +465,6 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
     }
     if (views >= 1000) return '${(views / 1000).toStringAsFixed(1)}K';
     return views.toString();
-  }
-
-  Widget _buildShortCard({
-    required String title,
-    required String views,
-    required String thumbUrl,
-    VoidCallback? onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        width: 160.w,
-        child: Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12.r),
-              child: CachedNetworkImage(
-                imageUrl: thumbUrl,
-                height: 280.h,
-                width: 160.w,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: const Center(child: Icon(Icons.error)),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 8.h,
-              right: 8.w,
-              child: Icon(
-                FontAwesomeIcons.ellipsisVertical,
-                color: Theme.of(context).colorScheme.onPrimary,
-                size: 20.sp,
-              ),
-            ),
-            Positioned(
-              bottom: 8.h,
-              left: 8.w,
-              right: 8.w,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    views,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -585,8 +515,9 @@ class VideoCard extends StatelessWidget {
   final Vido video;
 
   String _formatViews(int views) {
-    if (views >= 1000000)
+    if (views >= 1000000) {
       return '${(views / 1000000).toStringAsFixed(1)}M views';
+    }
     if (views >= 1000) return '${(views / 1000).toStringAsFixed(1)}K views';
     return '$views views';
   }
@@ -651,7 +582,7 @@ class VideoCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.8),
+                    ).colorScheme.onSurface.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                   child: Text(

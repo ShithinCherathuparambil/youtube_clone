@@ -1,4 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -36,6 +37,7 @@ final sl = GetIt.instance;
 Future<void> init() async {
   sl
     ..registerLazySingleton(() => FirebaseAuth.instance)
+    ..registerLazySingleton(() => FlutterLocalNotificationsPlugin())
     ..registerLazySingleton(() => DioClient())
     ..registerLazySingleton(() => const FlutterSecureStorage())
     ..registerLazySingleton(() => AesEncryptionService(sl()))
@@ -48,10 +50,10 @@ Future<void> init() async {
     ..registerLazySingleton<DownloadLocalDataSource>(
       () => DownloadLocalDataSourceImpl(),
     )
-    ..registerLazySingleton(() => BackgroundDownloadService(sl()))
+    ..registerLazySingleton(() => BackgroundDownloadService())
     ..registerLazySingleton<VideoRepository>(() => VideoRepositoryImpl(sl()))
     ..registerLazySingleton<DownloadRepository>(
-      () => DownloadRepositoryImpl(sl(), sl(), sl()),
+      () => DownloadRepositoryImpl(sl(), sl(), sl(), sl()),
     )
     ..registerLazySingleton<AuthRepository>(
       () => FirebaseAuthRepositoryImpl(sl()),

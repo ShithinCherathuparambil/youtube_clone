@@ -30,6 +30,8 @@ dependencies:
   cached_network_image: ^3.4.1
   shimmer: ^3.0.0
   flutter_screenutil: ^5.9.3
+  flutter_downloader: ^1.11.1
+  flutter_local_notifications: ^17.2.2
 
   # Crypto
   encrypt: ^5.0.3
@@ -49,6 +51,7 @@ dependencies:
   form_builder_validators: ^11.3.0
   youtube_explode_dart: ^3.0.5
   flutter_dotenv: ^6.0.0
+  storage_space: ^1.2.0
 
 dev_dependencies:
   flutter_test:
