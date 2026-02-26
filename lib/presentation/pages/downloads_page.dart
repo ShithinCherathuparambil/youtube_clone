@@ -10,6 +10,10 @@ import '../../injection_container.dart';
 import '../bloc/download/download_manager_cubit.dart';
 import '../bloc/download/download_manager_state.dart';
 
+import 'package:go_router/go_router.dart';
+import '../../domain/entities/storage_info.dart';
+import 'watch_page.dart';
+
 class DownloadsPage extends StatefulWidget {
   static const route = 'downloads';
   const DownloadsPage({super.key});
@@ -20,6 +24,7 @@ class DownloadsPage extends StatefulWidget {
 
 class _DownloadsPageState extends State<DownloadsPage> {
   bool _isSelectionMode = false;
+  bool _isDecrypting = false;
   final Set<String> _selectedItems = {};
 
   void _toggleSelectionMode() {
@@ -40,107 +45,115 @@ class _DownloadsPageState extends State<DownloadsPage> {
   }
 
   void _deleteSelected() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Delete functionality not yet connected to core model'),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Downloads'),
+        content: Text('Delete ${_selectedItems.length} selected videos?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<DownloadManagerCubit>().deleteDownloads(
+                _selectedItems.toList(),
+              );
+              Navigator.pop(context);
+              _toggleSelectionMode();
+            },
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
-    _toggleSelectionMode();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<DownloadManagerCubit>().loadCachedDownloads();
+    context.read<DownloadManagerCubit>().loadStorageInfo();
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DownloadManagerCubit, DownloadManagerState>(
       builder: (context, state) {
-        // We'll add some mocked data if state.downloads is empty so we can see the grid UI
-        final downloads = state.downloads.isNotEmpty
-            ? state.downloads
-            : _getMockDownloads();
+        if (state.isLoading && state.downloads.isEmpty) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-        return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: _buildAppBar(),
-          body: Column(
-            children: [
-              _buildStorageIndicator(),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  child: GridView.builder(
-                    padding: EdgeInsets.only(top: 16.h, bottom: 80.h),
-                    itemCount: downloads.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16.w,
-                      mainAxisSpacing: 16.h,
-                      childAspectRatio: 0.7,
+        final downloads = state.downloads;
+
+        return Stack(
+          children: [
+            Scaffold(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              appBar: _buildAppBar(state),
+              body: Column(
+                children: [
+                  _buildStorageIndicator(state.storageInfo),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: downloads.isEmpty && !state.isLoading
+                          ? _buildEmptyState()
+                          : GridView.builder(
+                              padding: EdgeInsets.only(top: 16.h, bottom: 80.h),
+                              itemCount: downloads.length,
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 16.w,
+                                    mainAxisSpacing: 16.h,
+                                    childAspectRatio: 0.7,
+                                  ),
+                              itemBuilder: (context, index) {
+                                final item = downloads[index];
+                                return _buildDownloadGridItem(item: item);
+                              },
+                            ),
                     ),
-                    itemBuilder: (context, index) {
-                      final item = downloads[index];
-                      // Handled mapped types and properties robustly for mock list mixed with cubit's elements
-                      String id;
-                      String thumb;
-                      String title;
-                      DownloadStatus status;
-                      double progress;
-                      String duration;
-
-                      if (item is DownloadItem) {
-                        id = item.videoId;
-                        thumb =
-                            'https://picsum.photos/seed/${item.videoId}/400/300';
-                        title = item.title;
-                        status = item.status;
-                        progress = item.progress;
-                        duration = '10:00';
-                      } else {
-                        final mapItem = item as Map<String, dynamic>;
-                        id = mapItem['id'] as String;
-                        thumb = mapItem['thumb'] as String;
-                        title = mapItem['title'] as String;
-                        status = mapItem['status'] as DownloadStatus;
-                        progress = mapItem['progress'] as double;
-                        duration = mapItem['duration'] as String;
-                      }
-
-                      return _buildDownloadGridItem(
-                        id: id,
-                        thumb: thumb,
-                        title: title,
-                        status: status,
-                        progress: progress,
-                        duration: duration,
-                      );
-                    },
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-          floatingActionButton: _isSelectionMode
-              ? FloatingActionButton.extended(
-                  onPressed: _selectedItems.isEmpty ? null : _deleteSelected,
-                  backgroundColor: _selectedItems.isEmpty
-                      ? Theme.of(context).disabledColor
-                      : Theme.of(context).colorScheme.error,
-                  icon: Icon(
-                    FontAwesomeIcons.trash,
-                    color: Theme.of(context).colorScheme.onError,
-                  ),
-                  label: Text(
-                    'Delete (${_selectedItems.length})',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onError,
-                    ),
-                  ),
-                )
-              : null,
+              floatingActionButton: _isSelectionMode
+                  ? FloatingActionButton.extended(
+                      onPressed: _selectedItems.isEmpty
+                          ? null
+                          : _deleteSelected,
+                      backgroundColor: _selectedItems.isEmpty
+                          ? Theme.of(context).disabledColor
+                          : Theme.of(context).colorScheme.error,
+                      icon: Icon(
+                        FontAwesomeIcons.trash,
+                        color: Theme.of(context).colorScheme.onError,
+                      ),
+                      label: Text(
+                        'Delete (${_selectedItems.length})',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onError,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            if (_isDecrypting)
+              Container(
+                color: Colors.black54,
+                child: const Center(child: CircularProgressIndicator()),
+              ),
+          ],
         );
       },
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(DownloadManagerState state) {
     return AppBar(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       foregroundColor: Theme.of(context).iconTheme.color,
@@ -154,14 +167,15 @@ class _DownloadsPageState extends State<DownloadsPage> {
         ),
       ),
       actions: [
-        IconButton(
-          icon: Icon(
-            _isSelectionMode
-                ? FontAwesomeIcons.xmark
-                : FontAwesomeIcons.listCheck,
+        if (state.downloads.isNotEmpty)
+          IconButton(
+            icon: Icon(
+              _isSelectionMode
+                  ? FontAwesomeIcons.xmark
+                  : FontAwesomeIcons.listCheck,
+            ),
+            onPressed: _toggleSelectionMode,
           ),
-          onPressed: _toggleSelectionMode,
-        ),
         IconButton(
           icon: const Icon(FontAwesomeIcons.magnifyingGlass),
           onPressed: () {},
@@ -174,7 +188,41 @@ class _DownloadsPageState extends State<DownloadsPage> {
     );
   }
 
-  Widget _buildStorageIndicator() {
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            FontAwesomeIcons.download,
+            size: 64.sp,
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurfaceVariant.withOpacity(0.3),
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            'No downloads yet',
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            'Videos you download will appear here',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStorageIndicator(StorageInfo? info) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       color: Theme.of(
@@ -195,7 +243,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                 ),
               ),
               Text(
-                '45.2 GB Free',
+                '${info?.freeSpaceGB.toStringAsFixed(1) ?? '0.0'} GB Free',
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -207,11 +255,13 @@ class _DownloadsPageState extends State<DownloadsPage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(4.r),
             child: LinearProgressIndicator(
-              value: 0.7, // 70% used
+              value: info != null
+                  ? (info.totalSpaceGB - info.freeSpaceGB) / info.totalSpaceGB
+                  : 0.0,
               backgroundColor: Theme.of(
                 context,
               ).colorScheme.surfaceContainerHighest,
-              color: Theme.of(context).colorScheme.primary,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
               minHeight: 8.h,
             ),
           ),
@@ -258,26 +308,48 @@ class _DownloadsPageState extends State<DownloadsPage> {
     );
   }
 
-  Widget _buildDownloadGridItem({
-    required String id,
-    required String thumb,
-    required String title,
-    required DownloadStatus status,
-    required double progress,
-    required String duration,
-  }) {
+  Widget _buildDownloadGridItem({required DownloadItem item}) {
+    final id = item.videoId;
+    final title = item.title;
     final isSelected = _selectedItems.contains(id);
+    final status = item.status;
+    final progress = item.progress;
+    final duration = '--:--'; // Fallback
 
     return GestureDetector(
       onLongPress: () {
         if (!_isSelectionMode) _toggleSelectionMode();
         _toggleItemSelection(id);
       },
-      onTap: () {
+      onTap: () async {
         if (_isSelectionMode) {
           _toggleItemSelection(id);
-        } else {
-          // Navigate to player
+        } else if (status == DownloadStatus.completed) {
+          // Decrypt and play
+          final cubit = context.read<DownloadManagerCubit>();
+          final item = cubit.state.downloads.firstWhere((e) => e.videoId == id);
+
+          setState(() {
+            _isDecrypting = true;
+          });
+
+          final file = await cubit.getDecryptedFile(id, item.outputPath);
+
+          if (mounted) {
+            setState(() {
+              _isDecrypting = false;
+            });
+
+            if (file != null) {
+              context.push(
+                '${WatchPage.route}?videoUrl=${Uri.encodeComponent(file.path)}&title=${Uri.encodeComponent(title)}&id=$id',
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Failed to decrypt video')),
+              );
+            }
+          }
         }
       },
       child: Stack(
@@ -303,7 +375,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                         top: Radius.circular(8.r),
                       ),
                       child: CachedNetworkImage(
-                        imageUrl: thumb,
+                        imageUrl: 'https://picsum.photos/seed/$id/400/300',
                         height: 110.h,
                         width: double.infinity,
                         fit: BoxFit.cover,
@@ -339,7 +411,8 @@ class _DownloadsPageState extends State<DownloadsPage> {
                     stream: sl<BackgroundDownloadService>().progressStream,
                     builder: (context, snapshot) {
                       double currentProgress = progress;
-                      if (snapshot.hasData && snapshot.data!.taskId == id) {
+                      if (snapshot.hasData &&
+                          snapshot.data!.taskId == item.taskId) {
                         currentProgress = snapshot.data!.progress;
                       }
                       return LinearProgressIndicator(
@@ -362,7 +435,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                         children: [
                           Expanded(
                             child: Text(
-                              title,
+                              item.title,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -377,15 +450,23 @@ class _DownloadsPageState extends State<DownloadsPage> {
                               icon: Icon(Icons.more_vert, size: 16.sp),
                               padding: EdgeInsets.zero,
                               onSelected: (value) {
+                                final taskId = item.taskId;
+                                if (taskId == null) return;
                                 switch (value) {
                                   case 'pause':
-                                    sl<BackgroundDownloadService>().pause(id);
+                                    sl<BackgroundDownloadService>().pause(
+                                      taskId,
+                                    );
                                     break;
                                   case 'resume':
-                                    sl<BackgroundDownloadService>().resume(id);
+                                    sl<BackgroundDownloadService>().resume(
+                                      taskId,
+                                    );
                                     break;
                                   case 'cancel':
-                                    sl<BackgroundDownloadService>().cancel(id);
+                                    sl<BackgroundDownloadService>().cancel(
+                                      taskId,
+                                    );
                                     break;
                                 }
                               },
@@ -403,12 +484,24 @@ class _DownloadsPageState extends State<DownloadsPage> {
                                   child: Text('Cancel'),
                                 ),
                               ],
+                            )
+                          else
+                            IconButton(
+                              icon: Icon(Icons.more_vert, size: 16.sp),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () {
+                                if (!_isSelectionMode) _toggleSelectionMode();
+                                _toggleItemSelection(id);
+                              },
                             ),
                         ],
                       ),
                       SizedBox(height: 4.h),
                       Text(
-                        'Video • Encrypted',
+                        status == DownloadStatus.completed
+                            ? 'Video • Encrypted'
+                            : 'Status: ${status.name}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -424,7 +517,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                             double currentProgress = progress;
                             String statusText = 'downloading';
                             if (snapshot.hasData &&
-                                snapshot.data!.taskId == id) {
+                                snapshot.data!.taskId == item.taskId) {
                               currentProgress = snapshot.data!.progress;
                               statusText = snapshot.data!.status.name;
                             }
@@ -477,42 +570,5 @@ class _DownloadsPageState extends State<DownloadsPage> {
         ],
       ),
     );
-  }
-
-  List<dynamic> _getMockDownloads() {
-    return [
-      {
-        'id': 'v1',
-        'title': 'Flutter Animation Tutorial',
-        'thumb': 'https://picsum.photos/id/1015/400/300',
-        'status': DownloadStatus.completed,
-        'progress': 1.0,
-        'duration': '12:45',
-      },
-      {
-        'id': 'v2',
-        'title': 'Build a YouTube Clone with Flutter',
-        'thumb': 'https://picsum.photos/id/1025/400/300',
-        'status': DownloadStatus.completed,
-        'progress': 1.0,
-        'duration': '1:24:10',
-      },
-      {
-        'id': 'v3',
-        'title': 'Dart 3 Features Explained',
-        'thumb': 'https://picsum.photos/id/1035/400/300',
-        'status': DownloadStatus.downloading,
-        'progress': 0.45,
-        'duration': '18:20',
-      },
-      {
-        'id': 'v4',
-        'title': 'State Management in 2026',
-        'thumb': 'https://picsum.photos/id/1045/400/300',
-        'status': DownloadStatus.completed,
-        'progress': 1.0,
-        'duration': '45:00',
-      },
-    ];
   }
 }

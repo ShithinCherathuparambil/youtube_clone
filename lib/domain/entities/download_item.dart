@@ -50,7 +50,32 @@ class DownloadItem extends Equatable {
     outputPath,
     status,
     progress,
-    taskId,
     errorMessage,
   ];
+
+  Map<String, dynamic> toMap() {
+    return {
+      'videoId': videoId,
+      'title': title,
+      'sourceUrl': sourceUrl,
+      'outputPath': outputPath,
+      'status': status.index,
+      'progress': progress,
+      'taskId': taskId,
+      'errorMessage': errorMessage,
+    };
+  }
+
+  factory DownloadItem.fromMap(Map<String, dynamic> map) {
+    return DownloadItem(
+      videoId: map['videoId'] as String,
+      title: map['title'] as String,
+      sourceUrl: map['sourceUrl'] as String,
+      outputPath: map['outputPath'] as String,
+      status: DownloadStatus.values[map['status'] as int],
+      progress: (map['progress'] as num).toDouble(),
+      taskId: map['taskId'] as String?,
+      errorMessage: map['errorMessage'] as String?,
+    );
+  }
 }

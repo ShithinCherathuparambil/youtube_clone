@@ -15,6 +15,7 @@ import 'domain/repositories/download_repository.dart';
 import 'domain/repositories/video_repository.dart';
 import 'domain/repositories/auth_repository.dart';
 import 'data/repositories/firebase_auth_repository_impl.dart';
+import 'domain/usecases/delete_download.dart';
 import 'domain/usecases/get_cached_downloads.dart';
 import 'domain/usecases/get_channel_details.dart';
 import 'domain/usecases/get_comments.dart';
@@ -23,8 +24,10 @@ import 'domain/usecases/get_popular_channels.dart';
 import 'domain/usecases/get_playlists.dart';
 import 'domain/usecases/get_shorts.dart';
 import 'domain/usecases/get_video_categories.dart';
+import 'domain/usecases/get_decrypted_file.dart';
 import 'domain/usecases/search_videos.dart';
 import 'domain/usecases/start_encrypted_download.dart';
+import 'core/services/storage_service.dart';
 import 'presentation/bloc/auth/auth_bloc.dart';
 import 'presentation/bloc/download/download_manager_cubit.dart';
 import 'presentation/bloc/video_player/video_player_bloc.dart';
@@ -51,6 +54,7 @@ Future<void> init() async {
       () => DownloadLocalDataSourceImpl(),
     )
     ..registerLazySingleton(() => BackgroundDownloadService())
+    ..registerLazySingleton(() => StorageService())
     ..registerLazySingleton<VideoRepository>(() => VideoRepositoryImpl(sl()))
     ..registerLazySingleton<DownloadRepository>(
       () => DownloadRepositoryImpl(sl(), sl(), sl(), sl()),
@@ -68,7 +72,11 @@ Future<void> init() async {
     ..registerLazySingleton(() => GetVideoCategories(sl()))
     ..registerLazySingleton(() => StartEncryptedDownload(sl()))
     ..registerLazySingleton(() => GetCachedDownloads(sl()))
+    ..registerLazySingleton(() => GetDecryptedFile(sl()))
+    ..registerLazySingleton(() => DeleteDownload(sl()))
     ..registerFactory(() => AuthBloc(sl()))
     ..registerFactory(() => VideoPlayerBloc())
-    ..registerFactory(() => DownloadManagerCubit(sl(), sl()));
+    ..registerFactory(
+      () => DownloadManagerCubit(sl(), sl(), sl(), sl(), sl()),
+    ); // Updated DownloadManagerCubit
 }

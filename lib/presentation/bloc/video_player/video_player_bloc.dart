@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:equatable/equatable.dart';
@@ -47,9 +48,20 @@ class VideoPlayerBloc extends Bloc<VideoPlayerEvent, VideoPlayerAppState> {
         }
       }
 
-      final controller = VideoPlayerController.networkUrl(
-        Uri.parse(playableUrl),
-      );
+      final VideoPlayerController controller;
+      if (playableUrl.startsWith('/') ||
+          playableUrl.startsWith('file://') ||
+          File(playableUrl).existsSync()) {
+        final file = File(
+          playableUrl.startsWith('file://')
+              ? playableUrl.replaceFirst('file://', '')
+              : playableUrl,
+        );
+        controller = VideoPlayerController.file(file);
+      } else {
+        controller = VideoPlayerController.networkUrl(Uri.parse(playableUrl));
+      }
+
       await controller.initialize();
       await controller.setVolume(state.volume);
       await controller.setPlaybackSpeed(state.playbackSpeed);

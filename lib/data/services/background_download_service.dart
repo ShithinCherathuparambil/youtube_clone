@@ -6,6 +6,14 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:injectable/injectable.dart';
 import 'package:path_provider/path_provider.dart';
 
+@pragma('vm:entry-point')
+void downloadCallback(String id, int status, int progress) {
+  final SendPort? send = IsolateNameServer.lookupPortByName(
+    BackgroundDownloadService._portName,
+  );
+  send?.send([id, status, progress]);
+}
+
 @lazySingleton
 class BackgroundDownloadService {
   BackgroundDownloadService() {
@@ -41,12 +49,6 @@ class BackgroundDownloadService {
     });
 
     FlutterDownloader.registerCallback(downloadCallback);
-  }
-
-  @pragma('vm:entry-point')
-  static void downloadCallback(String id, int status, int progress) {
-    final SendPort? send = IsolateNameServer.lookupPortByName(_portName);
-    send?.send([id, status, progress]);
   }
 
   Future<String?> enqueue({

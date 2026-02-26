@@ -12,16 +12,14 @@ abstract class DownloadLocalDataSource {
 
 @LazySingleton(as: DownloadLocalDataSource)
 class DownloadLocalDataSourceImpl implements DownloadLocalDataSource {
-  DownloadLocalDataSourceImpl();
+  static const _boxName = 'downloads_box';
 
-  static const _boxName = 'encrypted_downloads_box';
-
-  Future<Box<Map>> _openBox() async {
+  Future<Box> _openBox() async {
     try {
       if (!Hive.isBoxOpen(_boxName)) {
-        return await Hive.openBox<Map>(_boxName);
+        return await Hive.openBox(_boxName);
       }
-      return Hive.box<Map>(_boxName);
+      return Hive.box(_boxName);
     } catch (e) {
       throw CacheException('Failed to open Hive box: $e');
     }
@@ -31,16 +29,7 @@ class DownloadLocalDataSourceImpl implements DownloadLocalDataSource {
   Future<void> cacheDownload(DownloadItem item) async {
     try {
       final box = await _openBox();
-      await box.put(item.videoId, {
-        'videoId': item.videoId,
-        'title': item.title,
-        'sourceUrl': item.sourceUrl,
-        'outputPath': item.outputPath,
-        'status': item.status.name,
-        'progress': item.progress,
-        'taskId': item.taskId,
-        'errorMessage': item.errorMessage,
-      });
+      await box.put(item.videoId, item.toMap());
     } catch (e) {
       throw CacheException('Failed to cache download: $e');
     }
@@ -51,20 +40,20 @@ class DownloadLocalDataSourceImpl implements DownloadLocalDataSource {
     try {
       final box = await _openBox();
       return box.values
-          .map(
-            (raw) => DownloadItem(
-              videoId: raw['videoId'] as String,
-              title: raw['title'] as String,
-              sourceUrl: raw['sourceUrl'] as String,
-              outputPath: raw['outputPath'] as String,
-              status: DownloadStatus.values.byName(raw['status'] as String),
-              progress: (raw['progress'] as num).toDouble(),
-              errorMessage: raw['errorMessage'] as String?,
-            ),
-          )
-          .toList(growable: false);
+          .map((e) => DownloadItem.fromMap(Map<String, dynamic>.from(e as Map)))
+          .toList();
     } catch (e) {
       throw CacheException('Failed to get cached downloads: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteDownload(String videoId) async {
+    try {
+      final box = await _openBox();
+      await box.delete(videoId);
+    } catch (e) {
+      throw CacheException('Failed to delete download: $e');
     }
   }
 }

@@ -14,6 +14,9 @@ import '../../domain/usecases/get_comments.dart';
 
 import '../../injection_container.dart';
 import '../bloc/video_player/video_player_bloc.dart';
+import '../bloc/download/download_manager_cubit.dart';
+import '../bloc/download/download_manager_state.dart';
+import '../../domain/entities/download_item.dart';
 
 class WatchPage extends StatefulWidget {
   static const route = '/watch';
@@ -91,7 +94,11 @@ class _WatchPageState extends State<WatchPage> {
                           channelName: widget.channelName,
                           channelId: widget.channelId,
                         ),
-                        _ActionButtonsSection(videoUrl: widget.videoUrl),
+                        _ActionButtonsSection(
+                          videoUrl: widget.videoUrl,
+                          videoId: widget.id,
+                          title: widget.title,
+                        ),
                         const _DescriptionSection(),
                         Divider(
                           height: 1.h,
@@ -836,8 +843,14 @@ class _ChannelInfoSection extends StatelessWidget {
 }
 
 class _ActionButtonsSection extends StatefulWidget {
-  const _ActionButtonsSection({required this.videoUrl});
+  const _ActionButtonsSection({
+    required this.videoUrl,
+    required this.videoId,
+    required this.title,
+  });
   final String videoUrl;
+  final String videoId;
+  final String title;
 
   @override
   State<_ActionButtonsSection> createState() => _ActionButtonsSectionState();
@@ -847,9 +860,6 @@ class _ActionButtonsSectionState extends State<_ActionButtonsSection>
     with SingleTickerProviderStateMixin {
   bool _isLiked = false;
   late AnimationController _likeController;
-
-  bool _isDownloading = false;
-  double _downloadProgress = 0.0;
 
   @override
   void initState() {
@@ -868,28 +878,11 @@ class _ActionButtonsSectionState extends State<_ActionButtonsSection>
   }
 
   Future<void> _startDownload() async {
-    if (_isDownloading) return;
-
-    setState(() {
-      _isDownloading = true;
-      _downloadProgress = 0.0;
-    });
-
-    // Simulate download progress
-    for (int i = 1; i <= 100; i++) {
-      if (!mounted) return;
-      await Future.delayed(const Duration(milliseconds: 30));
-      setState(() {
-        _downloadProgress = i / 100.0;
-      });
-    }
-
-    if (!mounted) return;
-    setState(() => _isDownloading = false);
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Download complete!')));
+    context.read<DownloadManagerCubit>().queueDownload(
+      videoId: widget.videoId,
+      title: widget.title,
+      sourceUrl: widget.videoUrl,
+    );
   }
 
   @override
@@ -935,26 +928,48 @@ class _ActionButtonsSectionState extends State<_ActionButtonsSection>
             },
           ),
           SizedBox(width: 8.w),
-          _ActionButton(
-            icon: _isDownloading
-                ? SizedBox(
-                    width: 20.sp,
-                    height: 20.sp,
-                    child: CircularProgressIndicator(
-                      value: _downloadProgress,
-                      strokeWidth: 2,
-                      color: Theme.of(context).iconTheme.color,
-                    ),
-                  )
-                : Icon(
-                    Icons.download_outlined,
-                    size: 20.sp,
-                    color: Theme.of(context).iconTheme.color,
-                  ),
-            label: _isDownloading
-                ? '${(_downloadProgress * 100).toInt()}%'
-                : 'Download',
-            onTap: _startDownload,
+          BlocBuilder<DownloadManagerCubit, DownloadManagerState>(
+            builder: (context, state) {
+              final id = widget.videoId;
+              final item = state.downloads
+                  .where((e) => e.videoId == id)
+                  .firstOrNull;
+
+              final isDownloading =
+                  item?.status == DownloadStatus.downloading ||
+                  item?.status == DownloadStatus.queued ||
+                  item?.status == DownloadStatus.encrypting;
+              final progress = item?.progress ?? 0.0;
+              final isCompleted = item?.status == DownloadStatus.completed;
+
+              return _ActionButton(
+                icon: isDownloading
+                    ? SizedBox(
+                        width: 20.sp,
+                        height: 20.sp,
+                        child: CircularProgressIndicator(
+                          value: progress > 0 ? progress : null,
+                          strokeWidth: 2,
+                          color: Theme.of(context).iconTheme.color,
+                        ),
+                      )
+                    : Icon(
+                        isCompleted
+                            ? Icons.download_done
+                            : Icons.download_outlined,
+                        size: 20.sp,
+                        color: isCompleted
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).iconTheme.color,
+                      ),
+                label: isDownloading
+                    ? '${(progress * 100).toInt()}%'
+                    : isCompleted
+                    ? 'Downloaded'
+                    : 'Download',
+                onTap: isCompleted ? () {} : _startDownload,
+              );
+            },
           ),
           SizedBox(width: 8.w),
           _ActionButton(

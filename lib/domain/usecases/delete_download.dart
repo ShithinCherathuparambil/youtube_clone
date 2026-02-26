@@ -1,39 +1,23 @@
-import 'dart:io';
-
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
+import 'package:injectable/injectable.dart';
 
 import '../../core/error/failures.dart';
 import '../../core/usecases/usecase.dart';
 import '../repositories/download_repository.dart';
-import '../../data/datasources/download_local_data_source.dart';
 
+@lazySingleton
 class DeleteDownload implements UseCase<void, DeleteDownloadParams> {
-  DeleteDownload(this.repository, this.localDataSource);
+  DeleteDownload(this.repository);
 
   final DownloadRepository repository;
-  final DownloadLocalDataSource localDataSource;
 
   @override
   Future<Either<Failure, void>> call(DeleteDownloadParams params) async {
     try {
       for (final videoId in params.videoIds) {
-        final downloads = await localDataSource.getDownloads();
-        final item = downloads
-            .where((element) => element.videoId == videoId)
-            .firstOrNull;
-
-        if (item != null) {
-          // Delete file if exists
-          if (item.outputPath.isNotEmpty) {
-            final file = File(item.outputPath);
-            if (await file.exists()) {
-              await file.delete();
-            }
-          }
-          // Delete from Hive
-          await localDataSource.deleteDownload(videoId);
-        }
+        final result = await repository.deleteDownload(videoId);
+        if (result.isLeft()) return result;
       }
       return const Right(null);
     } catch (e) {

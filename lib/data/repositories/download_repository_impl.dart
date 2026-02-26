@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 import 'package:dartz/dartz.dart';
 import 'package:injectable/injectable.dart';
 
-import '../../core/error/exceptions.dart';
 import '../../core/error/failures.dart';
 import '../../core/security/aes_encryption_service.dart';
 import '../../domain/entities/download_item.dart';
@@ -13,6 +13,7 @@ import '../datasources/download_local_data_source.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import '../services/background_download_service.dart';
 
 @LazySingleton(as: DownloadRepository)
@@ -35,9 +36,51 @@ class DownloadRepositoryImpl implements DownloadRepository {
     required void Function(double progress) onProgress,
   }) async {
     try {
+      String playableUrl = item.sourceUrl;
+
+      // Resolve YouTube URL to direct stream URL
+      if (playableUrl.contains('youtube.com') ||
+          playableUrl.contains('youtu.be')) {
+        final yt = YoutubeExplode();
+        try {
+          final videoId = VideoId.parseVideoId(playableUrl);
+          if (videoId == null) {
+            return Left(ServerFailure('Invalid YouTube URL'));
+          }
+
+          final manifest = await yt.videos.streamsClient.getManifest(videoId);
+
+          StreamInfo? streamInfo;
+          try {
+            streamInfo = manifest.muxed.withHighestBitrate();
+          } catch (_) {
+            // No muxed streams
+            if (manifest.streams.isNotEmpty) {
+              streamInfo = manifest.streams.first;
+            }
+          }
+
+          if (streamInfo != null) {
+            playableUrl = streamInfo.url.toString();
+            debugPrint(
+              'DownloadRepository: Resolved to stream: ${streamInfo.size}',
+            );
+          } else {
+            return Left(
+              ServerFailure('No playable stream found for this video'),
+            );
+          }
+        } catch (e) {
+          debugPrint('DownloadRepository: Failed to resolve YouTube URL: $e');
+          return Left(ServerFailure('Failed to resolve video stream: $e'));
+        } finally {
+          yt.close();
+        }
+      }
+
       // 1. Enqueue background download
       final taskId = await _backgroundDownloadService.enqueue(
-        url: item.sourceUrl,
+        url: playableUrl,
         fileName: '${item.videoId}.mp4',
       );
 
@@ -73,6 +116,20 @@ class DownloadRepositoryImpl implements DownloadRepository {
                 completer.complete(
                   Left(ServerFailure('Downloaded file not found')),
                 );
+                return;
+              }
+
+              final fileSize = await tempFile.length();
+              if (fileSize < 1024 * 1024) {
+                // Less than 1MB
+                completer.complete(
+                  Left(
+                    ServerFailure(
+                      'Downloaded file is too small ($fileSize bytes). This is likely an error page or corrupted stream.',
+                    ),
+                  ),
+                );
+                await tempFile.delete();
                 return;
               }
 
@@ -131,14 +188,56 @@ class DownloadRepositoryImpl implements DownloadRepository {
   }
 
   @override
+  Future<Either<Failure, void>> deleteDownload(String videoId) async {
+    try {
+      final downloads = await _localDataSource.getDownloads();
+      final item = downloads.firstWhere((e) => e.videoId == videoId);
+
+      // 1. Delete from Hive
+      await _localDataSource.deleteDownload(videoId);
+
+      // 2. Delete encrypted file
+      if (item.outputPath.isNotEmpty) {
+        final file = File(item.outputPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
+
+      // 3. Remove from flutter_downloader if it's still there
+      if (item.taskId != null) {
+        await _backgroundDownloadService.remove(item.taskId!);
+      }
+
+      return const Right(null);
+    } catch (e) {
+      return Left(CacheFailure('Failed to delete download: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, File>> getDecryptedFile(
+    String videoId,
+    String encryptedPath,
+  ) async {
+    try {
+      final decryptedFile = await _encryptionService.decryptToTempFile(
+        videoId,
+        encryptedPath,
+      );
+      return Right(decryptedFile);
+    } catch (e) {
+      return Left(ServerFailure('Decryption failed: $e'));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<DownloadItem>>> getCachedDownloads() async {
     try {
       final downloads = await _localDataSource.getDownloads();
       return Right(downloads);
-    } on CacheException catch (e) {
-      return Left(CacheFailure(e.message));
     } catch (e) {
-      return Left(CacheFailure('Unknown cache error: $e'));
+      return Left(CacheFailure('Failed to get cached downloads: $e'));
     }
   }
 

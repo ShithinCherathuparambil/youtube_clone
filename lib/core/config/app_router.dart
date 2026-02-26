@@ -119,12 +119,24 @@ final GoRouter appRouter = GoRouter(
       path: WatchPage.route,
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
-        final args = state.extra as Map<String, dynamic>? ?? {};
-        final videoUrl = args['videoUrl'] as String? ?? '';
-        final title = args['title'] as String? ?? '';
-        final id = args['id'] as String? ?? '';
-        final channelName = args['channelName'] as String?;
-        final channelId = args['channelId'] as String?;
+        final Map<String, dynamic> args =
+            state.extra as Map<String, dynamic>? ?? {};
+        final videoUrl =
+            args['videoUrl'] as String? ??
+            state.uri.queryParameters['videoUrl'] ??
+            '';
+        final title =
+            args['title'] as String? ??
+            state.uri.queryParameters['title'] ??
+            '';
+        final id =
+            args['id'] as String? ?? state.uri.queryParameters['id'] ?? '';
+        final channelName =
+            args['channelName'] as String? ??
+            state.uri.queryParameters['channelName'];
+        final channelId =
+            args['channelId'] as String? ??
+            state.uri.queryParameters['channelId'];
         return WatchPage(
           videoUrl: videoUrl,
           title: title,

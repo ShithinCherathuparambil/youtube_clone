@@ -113,7 +113,9 @@ class AesEncryptionService {
       );
 
       final tempDir = Directory.systemTemp;
-      final tempFile = File('${tempDir.path}/temp_$videoId.mp4');
+      final tempFile = File(
+        '${tempDir.path}/decrypted_${videoId}_${DateTime.now().millisecondsSinceEpoch}.mp4',
+      );
       await tempFile.writeAsBytes(plainBytes, flush: true);
       return tempFile;
     } catch (e) {
