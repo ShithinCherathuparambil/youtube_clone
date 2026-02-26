@@ -94,7 +94,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                     width: 24.sp,
                     height: 24.sp,
                     colorFilter: ColorFilter.mode(
-                      Theme.of(context).colorScheme.primary,
+                      Color(0xFFFF0000),
                       BlendMode.srcIn,
                     ),
                   ),

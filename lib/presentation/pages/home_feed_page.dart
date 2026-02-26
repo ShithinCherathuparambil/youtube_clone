@@ -391,6 +391,7 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
             children: [
               SvgPicture.string(
                 YoutubeIcons.shortsFilled,
+                color: Color(0xFFFF0000),
                 width: 24.sp,
                 height: 24.sp,
                 colorFilter: ColorFilter.mode(
