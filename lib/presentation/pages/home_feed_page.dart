@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/constants/youtube_icons.dart';
 
 class HomeFeedPage extends StatefulWidget {
+  static const route = '/home';
   const HomeFeedPage({super.key});
 
   @override

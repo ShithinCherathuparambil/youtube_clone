@@ -11,6 +11,7 @@ import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_state.dart';
 
 class ProfilePage extends StatelessWidget {
+  static const route = '/library';
   const ProfilePage({super.key});
 
   @override

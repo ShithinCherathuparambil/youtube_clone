@@ -8,6 +8,7 @@ import '../../injection_container.dart';
 import '../bloc/video_player/video_player_bloc.dart';
 
 class WatchPage extends StatelessWidget {
+  static const route = '/watch';
   const WatchPage({super.key, required this.videoUrl, required this.title});
 
   final String videoUrl;

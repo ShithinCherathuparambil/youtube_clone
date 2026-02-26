@@ -9,6 +9,7 @@ import '../bloc/download/download_manager_state.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DownloadsPage extends StatefulWidget {
+  static const route = 'downloads';
   const DownloadsPage({super.key});
 
   @override

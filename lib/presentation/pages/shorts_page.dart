@@ -9,6 +9,7 @@ import '../bloc/video_player/video_player_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ShortsPage extends StatefulWidget {
+  static const route = '/shorts';
   const ShortsPage({super.key});
 
   @override

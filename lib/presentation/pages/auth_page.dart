@@ -11,6 +11,7 @@ import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_state.dart';
 
 class AuthPage extends StatefulWidget {
+  static const route = '/auth';
   const AuthPage({super.key});
 
   @override
@@ -81,11 +82,12 @@ class _AuthPageState extends State<AuthPage>
                     ),
                     SizedBox(width: 12.w),
                     Text(
-                      'CloneTube',
+                      'YouTube',
                       style: TextStyle(
                         fontSize: 28.sp,
                         fontWeight: FontWeight.w900,
                         letterSpacing: -1.0,
+                        color: Colors.black,
                       ),
                     ),
                   ],
@@ -157,6 +159,7 @@ class _EmailAuthForm extends StatefulWidget {
 class _EmailAuthFormState extends State<_EmailAuthForm> {
   final _formKey = GlobalKey<FormBuilderState>();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   bool _isRegistering = false;
 
   void _submit() {
@@ -185,13 +188,20 @@ class _EmailAuthFormState extends State<_EmailAuthForm> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r),
           ),
-          title: const Text('Reset Password'),
+          title: const Text(
+            'Reset Password',
+            style: TextStyle(color: Colors.black),
+          ),
+          backgroundColor: Colors.white,
           content: FormBuilder(
             key: resetKey,
             child: FormBuilderTextField(
               name: 'reset_email',
+              style: const TextStyle(color: Colors.black),
               decoration: InputDecoration(
                 labelText: 'Email Address',
+                labelStyle: TextStyle(color: Colors.grey[700]),
+                hintStyle: TextStyle(color: Colors.grey[500]),
                 filled: true,
                 fillColor: Colors.grey[50],
                 border: OutlineInputBorder(
@@ -263,6 +273,7 @@ class _EmailAuthFormState extends State<_EmailAuthForm> {
                     fontSize: 24.sp,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
+                    color: Colors.black,
                   ),
                 ),
                 SizedBox(height: 8.h),
@@ -279,9 +290,12 @@ class _EmailAuthFormState extends State<_EmailAuthForm> {
                 SizedBox(height: 32.h),
                 FormBuilderTextField(
                   name: 'email',
+                  style: const TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     labelText: 'Email address',
                     hintText: 'Enter your email',
+                    labelStyle: TextStyle(color: Colors.grey[700]),
+                    hintStyle: TextStyle(color: Colors.grey[500]),
                     prefixIcon: const Icon(
                       FontAwesomeIcons.solidEnvelope,
                       size: 20,
@@ -323,9 +337,12 @@ class _EmailAuthFormState extends State<_EmailAuthForm> {
                 SizedBox(height: 16.h),
                 FormBuilderTextField(
                   name: 'password',
+                  style: const TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     labelText: 'Password',
                     hintText: 'Enter your password',
+                    labelStyle: TextStyle(color: Colors.grey[700]),
+                    hintStyle: TextStyle(color: Colors.grey[500]),
                     prefixIcon: const Icon(FontAwesomeIcons.lock, size: 20),
                     prefixIconColor: WidgetStateColor.resolveWith(
                       (states) => states.contains(WidgetState.focused)
@@ -372,6 +389,75 @@ class _EmailAuthFormState extends State<_EmailAuthForm> {
                     FormBuilderValidators.minLength(6),
                   ]),
                 ),
+                if (_isRegistering) ...[
+                  SizedBox(height: 16.h),
+                  FormBuilderTextField(
+                    name: 'confirm_password',
+                    style: const TextStyle(color: Colors.black),
+                    decoration: InputDecoration(
+                      labelText: 'Confirm Password',
+                      hintText: 'Re-enter your password',
+                      labelStyle: TextStyle(color: Colors.grey[700]),
+                      hintStyle: TextStyle(color: Colors.grey[500]),
+                      prefixIcon: const Icon(FontAwesomeIcons.lock, size: 20),
+                      prefixIconColor: WidgetStateColor.resolveWith(
+                        (states) => states.contains(WidgetState.focused)
+                            ? Colors.red
+                            : Colors.grey,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword
+                              ? FontAwesomeIcons.eyeSlash
+                              : FontAwesomeIcons.eye,
+                          size: 20,
+                          color: Colors.grey[500],
+                        ),
+                        onPressed: () => setState(
+                          () => _obscureConfirmPassword =
+                              !_obscureConfirmPassword,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 20.h,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: BorderSide(
+                          color: Colors.grey[200]!,
+                          width: 1.5,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
+                      ),
+                      floatingLabelStyle: const TextStyle(color: Colors.red),
+                    ),
+                    obscureText: _obscureConfirmPassword,
+                    validator: (val) {
+                      if (val == null || val.isEmpty) {
+                        return 'This field cannot be empty.';
+                      }
+                      final password =
+                          _formKey.currentState?.fields['password']?.value;
+                      if (val != password) {
+                        return 'Passwords do not match.';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
                 SizedBox(height: 8.h),
                 if (!_isRegistering)
                   Align(
@@ -506,6 +592,7 @@ class _PhoneAuthFormState extends State<_PhoneAuthForm> {
                     fontSize: 24.sp,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
+                    color: Colors.black,
                   ),
                 ),
                 SizedBox(height: 8.h),
@@ -522,9 +609,12 @@ class _PhoneAuthFormState extends State<_PhoneAuthForm> {
                 SizedBox(height: 32.h),
                 FormBuilderTextField(
                   name: 'phone',
+                  style: const TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     labelText: 'Phone Number',
                     hintText: '+1234567890',
+                    labelStyle: TextStyle(color: Colors.grey[700]),
+                    hintStyle: TextStyle(color: Colors.grey[500]),
                     prefixIcon: const Icon(FontAwesomeIcons.phone, size: 20),
                     prefixIconColor: WidgetStateColor.resolveWith(
                       (states) => states.contains(WidgetState.focused)
@@ -571,9 +661,12 @@ class _PhoneAuthFormState extends State<_PhoneAuthForm> {
                   SizedBox(height: 16.h),
                   FormBuilderTextField(
                     name: 'otp',
+                    style: const TextStyle(color: Colors.black),
                     decoration: InputDecoration(
                       labelText: '6-digit Code',
                       hintText: 'Enter code',
+                      labelStyle: TextStyle(color: Colors.grey[700]),
+                      hintStyle: TextStyle(color: Colors.grey[500]),
                       prefixIcon: const Icon(
                         FontAwesomeIcons.commentSms,
                         size: 20,

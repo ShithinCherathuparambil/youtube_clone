@@ -25,11 +25,14 @@ final GlobalKey<NavigatorState> _shellNavigatorLibraryKey =
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/splash',
+  initialLocation: SplashPage.route,
   routes: [
-    GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
     GoRoute(
-      path: '/auth',
+      path: SplashPage.route,
+      builder: (context, state) => const SplashPage(),
+    ),
+    GoRoute(
+      path: AuthPage.route,
       pageBuilder: (context, state) => CustomTransitionPage(
         key: state.pageKey,
         child: const AuthPage(),
@@ -53,7 +56,7 @@ final GoRouter appRouter = GoRouter(
           navigatorKey: _shellNavigatorHomeKey,
           routes: [
             GoRoute(
-              path: '/home',
+              path: HomeFeedPage.route,
               builder: (context, state) => const HomeFeedPage(),
             ),
           ],
@@ -62,7 +65,7 @@ final GoRouter appRouter = GoRouter(
           navigatorKey: _shellNavigatorShortsKey,
           routes: [
             GoRoute(
-              path: '/shorts',
+              path: ShortsPage.route,
               builder: (context, state) => const ShortsPage(),
             ),
           ],
@@ -80,7 +83,7 @@ final GoRouter appRouter = GoRouter(
           navigatorKey: _shellNavigatorSubscriptionsKey,
           routes: [
             GoRoute(
-              path: '/subscriptions',
+              path: SubscriptionsPage.route,
               builder: (context, state) => const SubscriptionsPage(),
             ),
           ],
@@ -89,11 +92,11 @@ final GoRouter appRouter = GoRouter(
           navigatorKey: _shellNavigatorLibraryKey,
           routes: [
             GoRoute(
-              path: '/library',
+              path: ProfilePage.route,
               builder: (context, state) => const ProfilePage(),
               routes: [
                 GoRoute(
-                  path: 'downloads',
+                  path: DownloadsPage.route,
                   builder: (context, state) => const DownloadsPage(),
                 ),
               ],
@@ -103,7 +106,7 @@ final GoRouter appRouter = GoRouter(
       ],
     ),
     GoRoute(
-      path: '/watch',
+      path: WatchPage.route,
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         final args = state.extra as Map<String, dynamic>? ?? {};
