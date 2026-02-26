@@ -1,12 +1,14 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-
+import 'package:go_router/go_router.dart';
 import '../../core/constants/youtube_icons.dart';
 import '../../core/usecases/usecase.dart';
+import '../../core/utils/image_extensions.dart';
 import '../../domain/entities/channel.dart';
 import '../../domain/usecases/get_popular_channels.dart';
 import '../../injection_container.dart';
@@ -62,7 +64,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
         child: Column(
@@ -77,7 +79,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -91,8 +93,8 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                     YoutubeIcons.shortsFilled,
                     width: 24.sp,
                     height: 24.sp,
-                    colorFilter: const ColorFilter.mode(
-                      Colors.red,
+                    colorFilter: ColorFilter.mode(
+                      Theme.of(context).colorScheme.primary,
                       BlendMode.srcIn,
                     ),
                   ),
@@ -102,7 +104,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -110,7 +112,11 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
               ),
             ),
             _buildShortsGrid(),
-            Divider(thickness: 4.h, color: Colors.grey[200], height: 32.h),
+            Divider(
+              thickness: 4.h,
+              color: Theme.of(context).dividerColor,
+              height: 32.h,
+            ),
             _buildPostShortsVideo(),
             Padding(
               padding: EdgeInsets.only(top: 24.h),
@@ -132,10 +138,12 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
-      title: Image.network(
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/YouTube_Logo_2017.svg/512px-YouTube_Logo_2017.svg.png',
+      title: Image.asset(
+        Theme.of(context).brightness == Brightness.dark
+            ? 'youtube_icon_with_white_title'.webpImages
+            : 'youtube_icon_with_black_title'.webpImages,
         height: 22.h,
       ),
       actions: [
@@ -143,7 +151,10 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(FontAwesomeIcons.bell, color: Colors.black),
+              icon: Icon(
+                FontAwesomeIcons.bell,
+                color: Theme.of(context).iconTheme.color,
+              ),
               onPressed: () {},
             ),
             Positioned(
@@ -152,13 +163,13 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
                 decoration: BoxDecoration(
-                  color: Colors.red,
+                  color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(10.r),
                 ),
                 child: Text(
                   '9+',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                     fontSize: 10.sp,
                     fontWeight: FontWeight.bold,
                   ),
@@ -168,9 +179,9 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
           ],
         ),
         IconButton(
-          icon: const Icon(
+          icon: Icon(
             FontAwesomeIcons.magnifyingGlass,
-            color: Colors.black,
+            color: Theme.of(context).iconTheme.color,
           ),
           onPressed: () => context.push(SearchPage.route),
         ),
@@ -191,8 +202,10 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
     if (_isLoadingChannels) {
       return SizedBox(
         height: 100.h,
-        child: const Center(
-          child: CircularProgressIndicator(color: Colors.red),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
       );
     }
@@ -203,7 +216,9 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
         child: Center(
           child: Text(
             'Error loading channels',
-            style: TextStyle(color: Colors.grey[700]),
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
           ),
         ),
       );
@@ -243,12 +258,19 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                   children: [
                     CircleAvatar(
                       radius: 30.r,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       backgroundImage: channel.thumbnailUrl.isNotEmpty
                           ? CachedNetworkImageProvider(channel.thumbnailUrl)
                           : null,
                       child: channel.thumbnailUrl.isEmpty
-                          ? Icon(Icons.person, color: Colors.grey[400])
+                          ? Icon(
+                              Icons.person,
+                              color: Theme.of(
+                                context,
+                              ).iconTheme.color?.withOpacity(0.5),
+                            )
                           : null,
                     ),
                     Positioned(
@@ -260,7 +282,10 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                         decoration: BoxDecoration(
                           color: Colors.blue,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                          border: Border.all(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
@@ -273,7 +298,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 11.sp,
-                    color: Colors.grey[800],
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -325,13 +350,17 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
               margin: EdgeInsets.symmetric(horizontal: 4.w),
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.black : Colors.grey[100],
+                color: isSelected
+                    ? Theme.of(context).colorScheme.inverseSurface
+                    : Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(20.r),
               ),
               child: Text(
                 filter,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black87,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.onInverseSurface
+                      : Theme.of(context).textTheme.bodyMedium?.color,
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
                 ),
@@ -397,8 +426,9 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                 height: 100.h,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                placeholder: (context, url) =>
-                    Container(color: Colors.grey[200]),
+                placeholder: (context, url) => Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                ),
               ),
             ),
             if (badge != null)
@@ -448,7 +478,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                 style: TextStyle(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   height: 1.2,
                 ),
               ),
@@ -456,7 +486,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
             Icon(
               FontAwesomeIcons.ellipsisVertical,
               size: 16.sp,
-              color: Colors.grey[600],
+              color: Theme.of(context).iconTheme.color,
             ),
           ],
         ),
@@ -465,13 +495,19 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
           channel,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 11.sp, color: Colors.grey[700]),
+          style: TextStyle(
+            fontSize: 11.sp,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         Text(
           '$views • $time',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 11.sp, color: Colors.grey[700]),
+          style: TextStyle(
+            fontSize: 11.sp,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -586,8 +622,9 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                 height: 220.h,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                placeholder: (context, url) =>
-                    Container(color: Colors.grey[200]),
+                placeholder: (context, url) => Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                ),
               ),
               Positioned(
                 bottom: 8.h,
@@ -595,21 +632,21 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
                   decoration: BoxDecoration(
-                    color: Colors.red,
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         FontAwesomeIcons.wifi,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         size: 12.sp,
                       ),
                       SizedBox(width: 4.w),
                       Text(
                         'LIVE',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           fontSize: 10.sp,
                           fontWeight: FontWeight.bold,
                         ),
@@ -642,7 +679,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         height: 1.2,
                       ),
                       maxLines: 2,
@@ -653,7 +690,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                       'Business Today • 3 watching',
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: Colors.grey[700],
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -664,7 +701,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
               Icon(
                 FontAwesomeIcons.ellipsisVertical,
                 size: 20.sp,
-                color: Colors.grey[700],
+                color: Theme.of(context).iconTheme.color,
               ),
             ],
           ),

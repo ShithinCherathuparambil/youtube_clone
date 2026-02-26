@@ -56,7 +56,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
             : _getMockDownloads();
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: _buildAppBar(),
           body: Column(
             children: [
@@ -119,12 +119,17 @@ class _DownloadsPageState extends State<DownloadsPage> {
               ? FloatingActionButton.extended(
                   onPressed: _selectedItems.isEmpty ? null : _deleteSelected,
                   backgroundColor: _selectedItems.isEmpty
-                      ? Colors.grey
-                      : Colors.red,
-                  icon: const Icon(FontAwesomeIcons.trash, color: Colors.white),
+                      ? Theme.of(context).disabledColor
+                      : Theme.of(context).colorScheme.error,
+                  icon: Icon(
+                    FontAwesomeIcons.trash,
+                    color: Theme.of(context).colorScheme.onError,
+                  ),
                   label: Text(
                     'Delete (${_selectedItems.length})',
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onError,
+                    ),
                   ),
                 )
               : null,
@@ -135,12 +140,16 @@ class _DownloadsPageState extends State<DownloadsPage> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      foregroundColor: Theme.of(context).iconTheme.color,
       elevation: 0,
       title: Text(
         'Downloads',
-        style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          fontSize: 20.sp,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).textTheme.bodyLarge?.color,
+        ),
       ),
       actions: [
         IconButton(
@@ -166,7 +175,9 @@ class _DownloadsPageState extends State<DownloadsPage> {
   Widget _buildStorageIndicator() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-      color: Colors.grey[50],
+      color: Theme.of(
+        context,
+      ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -175,11 +186,18 @@ class _DownloadsPageState extends State<DownloadsPage> {
             children: [
               Text(
                 'Available Storage',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14.sp,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
               ),
               Text(
                 '45.2 GB Free',
-                style: TextStyle(fontSize: 14.sp, color: Colors.grey[700]),
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -188,8 +206,10 @@ class _DownloadsPageState extends State<DownloadsPage> {
             borderRadius: BorderRadius.circular(4.r),
             child: LinearProgressIndicator(
               value: 0.7, // 70% used
-              backgroundColor: Colors.grey[300],
-              color: Colors.blue,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest,
+              color: Theme.of(context).colorScheme.primary,
               minHeight: 8.h,
             ),
           ),
@@ -200,28 +220,34 @@ class _DownloadsPageState extends State<DownloadsPage> {
                 width: 12.w,
                 height: 12.w,
                 decoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
               SizedBox(width: 6.w),
               Text(
                 'Used by YouTube',
-                style: TextStyle(fontSize: 12.sp, color: Colors.grey[700]),
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               SizedBox(width: 16.w),
               Container(
                 width: 12.w,
                 height: 12.w,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
               SizedBox(width: 6.w),
               Text(
                 'Free Space',
-                style: TextStyle(fontSize: 12.sp, color: Colors.grey[700]),
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -257,9 +283,12 @@ class _DownloadsPageState extends State<DownloadsPage> {
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8.r),
-              color: Colors.white,
+              color: Theme.of(context).scaffoldBackgroundColor,
               border: _isSelectionMode && isSelected
-                  ? Border.all(color: Colors.blue, width: 2)
+                  ? Border.all(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    )
                   : null,
             ),
             child: Column(
@@ -287,13 +316,15 @@ class _DownloadsPageState extends State<DownloadsPage> {
                           vertical: 2.h,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.8),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.8),
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                         child: Text(
                           duration,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.surface,
                             fontSize: 10.sp,
                           ),
                         ),
@@ -305,8 +336,10 @@ class _DownloadsPageState extends State<DownloadsPage> {
                   LinearProgressIndicator(
                     value: progress,
                     minHeight: 4.h,
-                    color: Colors.red,
-                    backgroundColor: Colors.grey[300],
+                    color: Theme.of(context).colorScheme.primary,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                   ),
                 Padding(
                   padding: EdgeInsets.all(8.w),
@@ -329,7 +362,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11.sp,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                       if (status == DownloadStatus.downloading)
@@ -339,7 +372,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                             '${(progress * 100).toStringAsFixed(0)}% downloading',
                             style: TextStyle(
                               fontSize: 11.sp,
-                              color: Colors.blue,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                         ),
@@ -359,10 +392,12 @@ class _DownloadsPageState extends State<DownloadsPage> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isSelected
-                      ? Colors.blue
-                      : Colors.white.withOpacity(0.8),
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.surface.withOpacity(0.8),
                   border: Border.all(
-                    color: isSelected ? Colors.blue : Colors.grey,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).dividerColor,
                     width: 2,
                   ),
                 ),
@@ -370,7 +405,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                     ? Icon(
                         FontAwesomeIcons.check,
                         size: 16.sp,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                       )
                     : null,
               ),

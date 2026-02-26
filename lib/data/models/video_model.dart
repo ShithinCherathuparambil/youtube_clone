@@ -1,16 +1,19 @@
 import '../../core/utils/duration_parser.dart';
 import '../../domain/entities/video.dart';
 
-class VideoModel extends Video {
+class VideoModel extends Vido {
   const VideoModel({
     required super.id,
     required super.title,
     required super.channelName,
+    required super.channelId,
     required super.thumbnailUrl,
     required super.videoUrl,
     required super.duration,
     required super.views,
     required super.publishedAt,
+    super.likes = 0,
+    super.commentCount = 0,
   });
 
   factory VideoModel.fromMap(Map<String, dynamic> map) {
@@ -31,12 +34,16 @@ class VideoModel extends Video {
       id: videoId,
       title: snippet['title'] as String? ?? 'Unknown Title',
       channelName: snippet['channelTitle'] as String? ?? 'Unknown Channel',
+      channelId: snippet['channelId'] as String? ?? '',
       thumbnailUrl: highThumbnail['url'] as String? ?? '',
       videoUrl: 'https://www.youtube.com/watch?v=$videoId',
       duration: DurationParser.parseDuration(
         contentDetails['duration'] as String? ?? '',
       ),
       views: int.tryParse(statistics['viewCount']?.toString() ?? '0') ?? 0,
+      likes: int.tryParse(statistics['likeCount']?.toString() ?? '0') ?? 0,
+      commentCount:
+          int.tryParse(statistics['commentCount']?.toString() ?? '0') ?? 0,
       publishedAt:
           DateTime.tryParse(snippet['publishedAt'] as String? ?? '') ??
           DateTime.now(),
@@ -48,10 +55,13 @@ class VideoModel extends Video {
       'id': id,
       'title': title,
       'channelName': channelName,
+      'channelId': channelId,
       'thumbnailUrl': thumbnailUrl,
       'videoUrl': videoUrl,
       'durationSeconds': duration.inSeconds,
       'views': views,
+      'likes': likes,
+      'commentCount': commentCount,
       'publishedAt': publishedAt.toIso8601String(),
     };
   }

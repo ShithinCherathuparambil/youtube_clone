@@ -1,29 +1,29 @@
 import 'package:equatable/equatable.dart';
 
-class Channel extends Equatable {
-  const Channel({
+class Playlist extends Equatable {
+  const Playlist({
     required this.id,
     required this.title,
+    required this.description,
     required this.thumbnailUrl,
-    required this.subscriberCount,
-    this.bannerUrl,
-    this.description,
+    required this.itemCount,
+    required this.channelTitle,
   });
 
   final String id;
   final String title;
+  final String description;
   final String thumbnailUrl;
-  final int subscriberCount;
-  final String? bannerUrl;
-  final String? description;
+  final int itemCount;
+  final String channelTitle;
 
   @override
   List<Object?> get props => [
     id,
     title,
-    thumbnailUrl,
-    subscriberCount,
-    bannerUrl,
     description,
+    thumbnailUrl,
+    itemCount,
+    channelTitle,
   ];
 }

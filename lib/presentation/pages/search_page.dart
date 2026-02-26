@@ -22,7 +22,7 @@ class _SearchPageState extends State<SearchPage> {
   bool _isFetchingNextPage = false;
   String? _error;
   String? _nextPageToken;
-  List<Video> _videos = [];
+  List<Vido> _videos = [];
   String _currentQuery = '';
 
   @override
@@ -112,19 +112,44 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        titleSpacing: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).iconTheme.color,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: TextField(
           controller: _searchController,
           autofocus: true,
+          cursorColor: Theme.of(context).colorScheme.primary,
+          style: TextStyle(
+            fontSize: 16.sp,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+          onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             hintText: 'Search YouTube',
+            hintStyle: TextStyle(
+              fontSize: 16.sp,
+              color: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.color?.withOpacity(0.5),
+            ),
             border: InputBorder.none,
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.clear, color: Colors.black),
+          ),
+          textInputAction: TextInputAction.search,
+          onSubmitted: _performSearch,
+        ),
+        actions: [
+          if (_searchController.text.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.close, color: Theme.of(context).iconTheme.color),
               onPressed: () {
                 _searchController.clear();
                 setState(() {
@@ -133,10 +158,7 @@ class _SearchPageState extends State<SearchPage> {
                 });
               },
             ),
-          ),
-          textInputAction: TextInputAction.search,
-          onSubmitted: _performSearch,
-        ),
+        ],
       ),
       body: _buildBody(),
     );
@@ -144,7 +166,11 @@ class _SearchPageState extends State<SearchPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.red));
+      return Center(
+        child: CircularProgressIndicator(
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      );
     }
 
     if (_error != null) {
@@ -152,13 +178,25 @@ class _SearchPageState extends State<SearchPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 60.sp, color: Colors.grey[400]),
+            Icon(
+              Icons.error_outline,
+              size: 60.sp,
+              color: Theme.of(context).colorScheme.error,
+            ),
             SizedBox(height: 16.h),
-            Text(_error!, style: TextStyle(color: Colors.grey[700])),
+            Text(
+              _error!,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
+            ),
             SizedBox(height: 16.h),
             ElevatedButton(
               onPressed: () => _performSearch(_currentQuery),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              ),
               child: const Text('Retry'),
             ),
           ],
@@ -170,7 +208,9 @@ class _SearchPageState extends State<SearchPage> {
       return Center(
         child: Text(
           'No results found for "$_currentQuery"',
-          style: TextStyle(color: Colors.grey[700]),
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
         ),
       );
     }
@@ -180,9 +220,13 @@ class _SearchPageState extends State<SearchPage> {
       itemCount: _videos.length + (_isFetchingNextPage ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == _videos.length) {
-          return const Padding(
+          return Padding(
             padding: EdgeInsets.all(16.0),
-            child: Center(child: CircularProgressIndicator(color: Colors.red)),
+            child: Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           );
         }
         return VideoCard(video: _videos[index]);

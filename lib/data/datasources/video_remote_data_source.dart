@@ -7,14 +7,22 @@ import '../../core/network/dio_client.dart';
 import '../models/channel_model.dart';
 import '../models/comment_model.dart';
 import '../models/paginated_videos_model.dart';
+import '../models/playlist_model.dart';
+import '../models/video_category_model.dart';
 import '../models/video_model.dart';
 
 abstract class VideoRemoteDataSource {
-  Future<PaginatedVideosModel> getHomeVideos({String? pageToken});
+  Future<PaginatedVideosModel> getHomeVideos({
+    String? pageToken,
+    String? categoryId,
+  });
   Future<PaginatedVideosModel> getShorts({String? pageToken});
   Future<List<CommentModel>> getComments(String videoId);
   Future<List<ChannelModel>> getPopularChannels();
   Future<PaginatedVideosModel> searchVideos(String query, {String? pageToken});
+  Future<List<VideoCategoryModel>> getVideoCategories();
+  Future<List<PlaylistModel>> getPlaylists(String channelId);
+  Future<ChannelModel> getChannelDetails(String channelId);
 }
 
 @LazySingleton(as: VideoRemoteDataSource)
@@ -24,7 +32,10 @@ class VideoRemoteDataSourceImpl implements VideoRemoteDataSource {
   final DioClient _dioClient;
 
   @override
-  Future<PaginatedVideosModel> getHomeVideos({String? pageToken}) async {
+  Future<PaginatedVideosModel> getHomeVideos({
+    String? pageToken,
+    String? categoryId,
+  }) async {
     try {
       final queryParams = {
         'part': 'snippet,contentDetails,statistics',
@@ -36,6 +47,10 @@ class VideoRemoteDataSourceImpl implements VideoRemoteDataSource {
 
       if (pageToken != null && pageToken.isNotEmpty) {
         queryParams['pageToken'] = pageToken;
+      }
+
+      if (categoryId != null && categoryId != '0') {
+        queryParams['videoCategoryId'] = categoryId;
       }
 
       final response = await _dioClient.dio.get<Map<String, dynamic>>(
@@ -68,13 +83,44 @@ class VideoRemoteDataSourceImpl implements VideoRemoteDataSource {
         queryParams['pageToken'] = pageToken;
       }
 
-      final response = await _dioClient.dio.get<Map<String, dynamic>>(
+      final searchResponse = await _dioClient.dio.get<Map<String, dynamic>>(
         'https://www.googleapis.com/youtube/v3/search',
         queryParameters: queryParams,
       );
 
-      final data = response.data ?? {};
-      return PaginatedVideosModel.fromMap(data);
+      final searchData = searchResponse.data ?? {};
+      final items = searchData['items'] as List<dynamic>? ?? <dynamic>[];
+
+      if (items.isEmpty) {
+        return PaginatedVideosModel.fromMap(searchData);
+      }
+
+      final videoIds = items
+          .map((item) {
+            if (item is Map<String, dynamic>) {
+              final id = item['id'];
+              if (id is Map<String, dynamic>) {
+                return id['videoId'] as String?;
+              }
+            }
+            return null;
+          })
+          .whereType<String>()
+          .join(',');
+
+      final videosResponse = await _dioClient.dio.get<Map<String, dynamic>>(
+        'https://www.googleapis.com/youtube/v3/videos',
+        queryParameters: {
+          'part': 'snippet,contentDetails,statistics',
+          'id': videoIds,
+          'key': YouTubeApiKeys.apiKey,
+        },
+      );
+
+      final videosData = videosResponse.data ?? {};
+      videosData['nextPageToken'] = searchData['nextPageToken'];
+
+      return PaginatedVideosModel.fromMap(videosData);
     } on DioException catch (e) {
       throw ServerException('Failed to fetch shorts: ${e.message}');
     } catch (e) {
@@ -167,6 +213,87 @@ class VideoRemoteDataSourceImpl implements VideoRemoteDataSource {
       throw ServerException('Failed to search videos: ${e.message}');
     } catch (e) {
       throw ServerException('Unexpected error while searching videos: $e');
+    }
+  }
+
+  @override
+  Future<List<VideoCategoryModel>> getVideoCategories() async {
+    try {
+      final response = await _dioClient.dio.get<Map<String, dynamic>>(
+        'https://www.googleapis.com/youtube/v3/videoCategories',
+        queryParameters: {
+          'part': 'snippet',
+          'regionCode': 'US',
+          'key': YouTubeApiKeys.apiKey,
+        },
+      );
+
+      final items = response.data?['items'] as List<dynamic>? ?? <dynamic>[];
+      final categories = items
+          .cast<Map<String, dynamic>>()
+          .map(VideoCategoryModel.fromMap)
+          .where((category) => category.assignable)
+          .toList();
+      return categories;
+    } on DioException catch (e) {
+      throw ServerException('Failed to fetch video categories: ${e.message}');
+    } catch (e) {
+      throw ServerException(
+        'Unexpected error while fetching video categories: $e',
+      );
+    }
+  }
+
+  @override
+  Future<List<PlaylistModel>> getPlaylists(String channelId) async {
+    try {
+      final response = await _dioClient.dio.get<Map<String, dynamic>>(
+        'https://www.googleapis.com/youtube/v3/playlists',
+        queryParameters: {
+          'part': 'snippet,contentDetails',
+          'channelId': channelId,
+          'maxResults': 20,
+          'key': YouTubeApiKeys.apiKey,
+        },
+      );
+
+      final items = response.data?['items'] as List<dynamic>? ?? <dynamic>[];
+      final playlists = items
+          .cast<Map<String, dynamic>>()
+          .map(PlaylistModel.fromMap)
+          .toList();
+      return playlists;
+    } on DioException catch (e) {
+      throw ServerException('Failed to fetch playlists: ${e.message}');
+    } catch (e) {
+      throw ServerException('Unexpected error while fetching playlists: $e');
+    }
+  }
+
+  @override
+  Future<ChannelModel> getChannelDetails(String channelId) async {
+    try {
+      final response = await _dioClient.dio.get<Map<String, dynamic>>(
+        'https://www.googleapis.com/youtube/v3/channels',
+        queryParameters: {
+          'part': 'snippet,statistics,brandingSettings',
+          'id': channelId,
+          'key': YouTubeApiKeys.apiKey,
+        },
+      );
+
+      final items = response.data?['items'] as List<dynamic>? ?? <dynamic>[];
+      if (items.isEmpty) {
+        throw ServerException('Channel not found');
+      }
+
+      return ChannelModel.fromMap(items.first as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ServerException('Failed to fetch channel details: ${e.message}');
+    } catch (e) {
+      throw ServerException(
+        'Unexpected error while fetching channel details: $e',
+      );
     }
   }
 }

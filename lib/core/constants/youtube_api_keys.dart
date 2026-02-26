@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class YouTubeApiKeys {
-  static const String apiKey = 'AIzaSyBHSxjGWJaC9xJuHP48w9vN14ZY11ZrXuI';
+  static String get apiKey => dotenv.env['YOUTUBE_API_KEY'] ?? '';
 }

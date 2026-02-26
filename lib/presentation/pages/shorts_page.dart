@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../domain/entities/video.dart';
@@ -13,25 +16,47 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ShortsPage extends StatefulWidget {
   static const route = '/shorts';
-  const ShortsPage({super.key});
+  final List<Vido>? initialVideos;
+  final int? initialIndex;
+  final String? nextPageToken;
+
+  const ShortsPage({
+    super.key,
+    this.initialVideos,
+    this.initialIndex,
+    this.nextPageToken,
+  });
 
   @override
   State<ShortsPage> createState() => _ShortsPageState();
 }
 
 class _ShortsPageState extends State<ShortsPage> {
-  final PageController _pageController = PageController();
+  late PageController _pageController;
 
   bool _isLoading = true;
   bool _isFetchingNextPage = false;
   String? _error;
   String? _nextPageToken;
-  List<Video> _shorts = [];
+  List<Vido> _shorts = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchShorts();
+    _pageController = PageController(initialPage: widget.initialIndex ?? 0);
+
+    if (widget.initialVideos != null && widget.initialVideos!.isNotEmpty) {
+      _shorts = List.from(widget.initialVideos!);
+      _nextPageToken = widget.nextPageToken;
+      _isLoading = false;
+
+      if (widget.initialIndex != null &&
+          widget.initialIndex! >= _shorts.length - 2) {
+        _fetchNextPage();
+      }
+    } else {
+      _fetchShorts();
+    }
   }
 
   Future<void> _fetchShorts() async {
@@ -150,6 +175,20 @@ class _ShortsPageState extends State<ShortsPage> {
                   ),
                   Positioned(
                     top: 16.h,
+                    left: 16.w,
+                    child: context.canPop()
+                        ? IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            onPressed: () => context.pop(),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  Positioned(
+                    top: 16.h,
                     right: 16.w,
                     child: Row(
                       children: [
@@ -191,7 +230,7 @@ class _ShortsPageState extends State<ShortsPage> {
 
 class _ShortVideoPlayer extends StatefulWidget {
   const _ShortVideoPlayer({required this.shortData});
-  final Video shortData;
+  final Vido shortData;
 
   @override
   State<_ShortVideoPlayer> createState() => _ShortVideoPlayerState();
@@ -199,6 +238,8 @@ class _ShortVideoPlayer extends StatefulWidget {
 
 class _ShortVideoPlayerState extends State<_ShortVideoPlayer> {
   late VideoPlayerBloc _bloc;
+  bool _showPlayIcon = false;
+  Timer? _hideTimer;
 
   @override
   void initState() {
@@ -209,8 +250,34 @@ class _ShortVideoPlayerState extends State<_ShortVideoPlayer> {
 
   @override
   void dispose() {
+    _hideTimer?.cancel();
     _bloc.close();
     super.dispose();
+  }
+
+  void _togglePlayPause(VideoPlayerController controller) {
+    if (controller.value.isPlaying) {
+      // Pause video, show icon
+      _bloc.add(VideoPlayPauseToggled());
+      setState(() {
+        _showPlayIcon = true;
+      });
+      _hideTimer?.cancel();
+    } else {
+      // Play video, show icon briefly then hide
+      _bloc.add(VideoPlayPauseToggled());
+      setState(() {
+        _showPlayIcon = true;
+      });
+      _hideTimer?.cancel();
+      _hideTimer = Timer(const Duration(seconds: 1), () {
+        if (mounted) {
+          setState(() {
+            _showPlayIcon = false;
+          });
+        }
+      });
+    }
   }
 
   @override
@@ -220,21 +287,19 @@ class _ShortVideoPlayerState extends State<_ShortVideoPlayer> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          GestureDetector(
-            onTap: () {
-              _bloc.add(VideoPlayPauseToggled());
-            },
-            child: BlocBuilder<VideoPlayerBloc, VideoPlayerAppState>(
-              builder: (context, state) {
-                if (state.status == VideoPlayerStatus.loading ||
-                    state.controller == null) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  );
-                }
+          BlocBuilder<VideoPlayerBloc, VideoPlayerAppState>(
+            builder: (context, state) {
+              if (state.status == VideoPlayerStatus.loading ||
+                  state.controller == null) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                );
+              }
 
-                final controller = state.controller!;
-                return Stack(
+              final controller = state.controller!;
+              return GestureDetector(
+                onTap: () => _togglePlayPause(controller),
+                child: Stack(
                   fit: StackFit.expand,
                   children: [
                     FittedBox(
@@ -245,18 +310,25 @@ class _ShortVideoPlayerState extends State<_ShortVideoPlayer> {
                         child: VideoPlayer(controller),
                       ),
                     ),
-                    if (!controller.value.isPlaying)
-                      const Center(
+                    Center(
+                      child: AnimatedOpacity(
+                        opacity: _showPlayIcon || !controller.value.isPlaying
+                            ? 1.0
+                            : 0.0,
+                        duration: const Duration(milliseconds: 300),
                         child: Icon(
-                          FontAwesomeIcons.play,
+                          controller.value.isPlaying
+                              ? FontAwesomeIcons.pause
+                              : FontAwesomeIcons.play,
                           color: Colors.white60,
                           size: 80,
                         ),
                       ),
+                    ),
                   ],
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
 
           // Right action bar
@@ -303,7 +375,7 @@ class _ShortVideoPlayerState extends State<_ShortVideoPlayer> {
 
 class _ShortsActionBar extends StatelessWidget {
   const _ShortsActionBar({required this.shortData});
-  final Video shortData;
+  final Vido shortData;
 
   String _formatNumber(int num) {
     if (num >= 1000000) return '${(num / 1000000).toStringAsFixed(1)}M';
@@ -318,14 +390,14 @@ class _ShortsActionBar extends StatelessWidget {
       children: [
         _ActionItem(
           icon: FontAwesomeIcons.thumbsUp,
-          label: _formatNumber(shortData.views ~/ 10),
-        ), // Simulated likes
+          label: _formatNumber(shortData.likes),
+        ),
         SizedBox(height: 16.h),
         _ActionItem(icon: FontAwesomeIcons.thumbsDown, label: 'Dislike'),
         SizedBox(height: 16.h),
         _ActionItem(
           icon: FontAwesomeIcons.comment,
-          label: _formatNumber(shortData.views ~/ 100), // Simulated comments
+          label: _formatNumber(shortData.commentCount),
         ),
         SizedBox(height: 16.h),
         _ActionItem(icon: FontAwesomeIcons.share, label: 'Share'),
@@ -377,7 +449,7 @@ class _ActionItem extends StatelessWidget {
 
 class _ShortsInfoOverlay extends StatelessWidget {
   const _ShortsInfoOverlay({required this.shortData});
-  final Video shortData;
+  final Vido shortData;
 
   @override
   Widget build(BuildContext context) {

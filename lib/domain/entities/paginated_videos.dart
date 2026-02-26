@@ -5,7 +5,7 @@ import 'video.dart';
 class PaginatedVideos extends Equatable {
   const PaginatedVideos({required this.videos, this.nextPageToken});
 
-  final List<Video> videos;
+  final List<Vido> videos;
   final String? nextPageToken;
 
   @override

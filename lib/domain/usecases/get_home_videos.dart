@@ -8,11 +8,12 @@ import '../entities/paginated_videos.dart';
 import '../repositories/video_repository.dart';
 
 class GetHomeVideosParams extends Equatable {
-  const GetHomeVideosParams({this.pageToken});
+  const GetHomeVideosParams({this.pageToken, this.categoryId});
   final String? pageToken;
+  final String? categoryId;
 
   @override
-  List<Object?> get props => [pageToken];
+  List<Object?> get props => [pageToken, categoryId];
 }
 
 @lazySingleton
@@ -21,8 +22,10 @@ class GetHomeVideos implements UseCase<PaginatedVideos, GetHomeVideosParams> {
 
   final VideoRepository _repository;
 
-  @override
   Future<Either<Failure, PaginatedVideos>> call(GetHomeVideosParams params) {
-    return _repository.getHomeVideos(pageToken: params.pageToken);
+    return _repository.getHomeVideos(
+      pageToken: params.pageToken,
+      categoryId: params.categoryId,
+    );
   }
 }

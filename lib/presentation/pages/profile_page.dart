@@ -6,13 +6,46 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/constants/youtube_icons.dart';
+import '../../domain/entities/playlist.dart';
+import '../../domain/usecases/get_playlists.dart';
+import '../../injection_container.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_state.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   static const route = '/library';
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  List<Playlist> _playlists = [];
+  bool _isLoadingPlaylists = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPlaylists();
+  }
+
+  Future<void> _fetchPlaylists() async {
+    final getPlaylists = sl<GetPlaylists>();
+    final result = await getPlaylists('UC_x5XG1OV2P6uZZ5FSM9Ttw');
+
+    if (!mounted) return;
+
+    result.fold((failure) => setState(() => _isLoadingPlaylists = false), (
+      playlists,
+    ) {
+      setState(() {
+        _playlists = playlists;
+        _isLoadingPlaylists = false;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,10 +60,10 @@ class ProfilePage extends StatelessWidget {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          foregroundColor: Theme.of(context).iconTheme.color,
           elevation: 0,
           actions: [
             IconButton(
@@ -92,7 +125,7 @@ class ProfilePage extends StatelessWidget {
               SizedBox(height: 24.h),
               _buildVideoActions(context),
               SizedBox(height: 16.h),
-              Divider(height: 1.h, color: Colors.grey[200]),
+              Divider(height: 1.h, color: Theme.of(context).dividerColor),
               SizedBox(height: 8.h),
               _buildPremiumActions(context),
               SizedBox(height: 40.h),
@@ -124,7 +157,7 @@ class ProfilePage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 24.sp,
                     fontWeight: FontWeight.w700,
-                    color: Colors.black,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -135,26 +168,45 @@ class ProfilePage extends StatelessWidget {
                       '@shithincp1484',
                       style: TextStyle(
                         fontSize: 13.sp,
-                        color: Colors.black87,
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withOpacity(0.87),
                         fontWeight: FontWeight.w400,
                       ),
                     ),
                     Text(
                       '  •  ',
-                      style: TextStyle(fontSize: 13.sp, color: Colors.black87),
-                    ),
-                    Text(
-                      'View channel',
                       style: TextStyle(
                         fontSize: 13.sp,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w400,
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withOpacity(0.87),
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right,
-                      size: 16.sp,
-                      color: Colors.black87,
+                    InkWell(
+                      onTap: () =>
+                          context.push('/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw'),
+                      child: Row(
+                        children: [
+                          Text(
+                            'View channel',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color?.withOpacity(0.87),
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 16.sp,
+                            color: Theme.of(
+                              context,
+                            ).iconTheme.color?.withOpacity(0.87),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -186,20 +238,30 @@ class ProfilePage extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: Theme.of(context).brightness == Brightness.light
+            ? Colors.grey[100]
+            : Colors.grey[800],
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14.sp, color: Colors.black87),
+          Icon(
+            icon,
+            size: 14.sp,
+            color: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.color?.withOpacity(0.87),
+          ),
           SizedBox(width: 6.w),
           Text(
             label,
             style: TextStyle(
               fontSize: 13.sp,
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
+              color: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.color?.withOpacity(0.87),
             ),
           ),
         ],
@@ -221,14 +283,14 @@ class ProfilePage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   letterSpacing: -0.5,
                 ),
               ),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(color: Theme.of(context).dividerColor),
                   borderRadius: BorderRadius.circular(16.r),
                 ),
                 child: Text(
@@ -236,7 +298,7 @@ class ProfilePage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
               ),
@@ -323,7 +385,7 @@ class ProfilePage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w400,
-                        color: Colors.black,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -333,7 +395,7 @@ class ProfilePage extends StatelessWidget {
                       subtitle,
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).textTheme.bodySmall?.color,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -344,7 +406,7 @@ class ProfilePage extends StatelessWidget {
               Icon(
                 FontAwesomeIcons.ellipsisVertical,
                 size: 14.sp,
-                color: Colors.black,
+                color: Theme.of(context).iconTheme.color,
               ),
             ],
           ),
@@ -415,7 +477,7 @@ class ProfilePage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w400,
-                        color: Colors.black,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -425,7 +487,7 @@ class ProfilePage extends StatelessWidget {
                       subtitle,
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).textTheme.bodySmall?.color,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -436,7 +498,7 @@ class ProfilePage extends StatelessWidget {
               Icon(
                 FontAwesomeIcons.ellipsisVertical,
                 size: 14.sp,
-                color: Colors.black,
+                color: Theme.of(context).iconTheme.color,
               ),
             ],
           ),
@@ -459,13 +521,17 @@ class ProfilePage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   letterSpacing: -0.5,
                 ),
               ),
               Row(
                 children: [
-                  Icon(FontAwesomeIcons.plus, size: 20.sp, color: Colors.black),
+                  Icon(
+                    FontAwesomeIcons.plus,
+                    size: 20.sp,
+                    color: Theme.of(context).iconTheme.color,
+                  ),
                   SizedBox(width: 16.w),
                   Container(
                     padding: EdgeInsets.symmetric(
@@ -473,7 +539,7 @@ class ProfilePage extends StatelessWidget {
                       vertical: 6.h,
                     ),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
+                      border: Border.all(color: Theme.of(context).dividerColor),
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                     child: Text(
@@ -481,7 +547,7 @@ class ProfilePage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                     ),
                   ),
@@ -493,27 +559,28 @@ class ProfilePage extends StatelessWidget {
         SizedBox(height: 12.h),
         SizedBox(
           height: 160.h,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            children: [
-              _buildPlaylistCard(
-                'Liked videos',
-                'Private',
-                'https://picsum.photos/id/292/300/200',
-                FontAwesomeIcons.thumbsUp,
-                '915',
-              ),
-              SizedBox(width: 12.w),
-              _buildPlaylistCard(
-                'Watch later',
-                'Private',
-                'https://picsum.photos/id/28/300/200',
-                FontAwesomeIcons.clock,
-                '41',
-              ),
-            ],
-          ),
+          child: _isLoadingPlaylists
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.red),
+                )
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  itemCount: _playlists.length,
+                  itemBuilder: (context, index) {
+                    final playlist = _playlists[index];
+                    return Padding(
+                      padding: EdgeInsets.only(right: 12.w),
+                      child: _buildPlaylistCard(
+                        playlist.title,
+                        playlist.channelTitle,
+                        playlist.thumbnailUrl,
+                        FontAwesomeIcons.list,
+                        playlist.itemCount.toString(),
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -580,7 +647,7 @@ class ProfilePage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w400,
-                        color: Colors.black,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -590,7 +657,7 @@ class ProfilePage extends StatelessWidget {
                       subtitle,
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).textTheme.bodySmall?.color,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -601,7 +668,7 @@ class ProfilePage extends StatelessWidget {
               Icon(
                 FontAwesomeIcons.ellipsisVertical,
                 size: 14.sp,
-                color: Colors.black,
+                color: Theme.of(context).iconTheme.color,
               ),
             ],
           ),
@@ -642,26 +709,33 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _buildListTile(IconData icon, String title, {VoidCallback? onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 24.w,
-              child: Icon(icon, size: 20.sp, color: Colors.black87),
-            ),
-            SizedBox(width: 20.w),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16.sp,
-                color: Colors.black,
-                fontWeight: FontWeight.w400,
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 24.w,
+                child: Icon(
+                  icon,
+                  size: 20.sp,
+                  color: Theme.of(context).iconTheme.color,
+                ),
               ),
-            ),
-          ],
+              SizedBox(width: 20.w),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

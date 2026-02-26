@@ -51,9 +51,15 @@ class _YoutubeBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = currentIndex == 1;
-    final bgColor = isDark ? Colors.black : Colors.white;
-    final itemColor = isDark ? Colors.white : Colors.black;
-    final borderColor = isDark ? Colors.grey[800]! : const Color(0xFFE0E0E0);
+    final bgColor = isDark
+        ? Colors.black
+        : Theme.of(context).scaffoldBackgroundColor;
+    final itemColor = isDark
+        ? Colors.white
+        : Theme.of(context).iconTheme.color!;
+    final borderColor = isDark
+        ? Colors.grey[800]!
+        : Theme.of(context).dividerColor;
 
     return Container(
       color: bgColor,
@@ -160,7 +166,9 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selected = index == currentIndex;
-    final itemColor = isDark ? Colors.white : Colors.black;
+    final itemColor = isDark
+        ? Colors.white
+        : Theme.of(context).iconTheme.color!;
 
     return Expanded(
       child: InkWell(
@@ -217,7 +225,7 @@ class _CreateBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(16.r),
           topRight: Radius.circular(16.r),
@@ -237,11 +245,15 @@ class _CreateBottomSheet extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close, size: 24.sp, color: Colors.black),
+                    icon: Icon(
+                      Icons.close,
+                      size: 24.sp,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -249,25 +261,25 @@ class _CreateBottomSheet extends StatelessWidget {
             ),
             _CreateActionItem(
               iconSvg: YoutubeIcons.shortsOutline,
-              iconColor: Colors.black,
+              iconColor: Theme.of(context).iconTheme.color!,
               label: 'Create a Short',
               onTap: () => Navigator.pop(context),
             ),
             _CreateActionItem(
               iconData: FontAwesomeIcons.arrowUpFromBracket,
-              iconColor: Colors.black,
+              iconColor: Theme.of(context).iconTheme.color!,
               label: 'Upload a video',
               onTap: () => Navigator.pop(context),
             ),
             _CreateActionItem(
               iconData: FontAwesomeIcons.satelliteDish,
-              iconColor: Colors.black,
+              iconColor: Theme.of(context).iconTheme.color!,
               label: 'Go Live',
               onTap: () => Navigator.pop(context),
             ),
             _CreateActionItem(
               iconData: FontAwesomeIcons.pen,
-              iconColor: Colors.black,
+              iconColor: Theme.of(context).iconTheme.color!,
               label: 'Create a post',
               onTap: () => Navigator.pop(context),
             ),
@@ -306,7 +318,7 @@ class _CreateActionItem extends StatelessWidget {
               width: 44.w,
               height: 44.w,
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -326,7 +338,10 @@ class _CreateActionItem extends StatelessWidget {
             SizedBox(width: 16.w),
             Text(
               label,
-              style: TextStyle(fontSize: 16.sp, color: Colors.black),
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
             ),
           ],
         ),

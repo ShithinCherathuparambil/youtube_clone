@@ -3,7 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
+import 'package:flutter/services.dart';
+import 'dart:async';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../domain/entities/comment.dart';
 import '../../domain/usecases/get_comments.dart';
@@ -11,46 +15,101 @@ import '../../domain/usecases/get_comments.dart';
 import '../../injection_container.dart';
 import '../bloc/video_player/video_player_bloc.dart';
 
-class WatchPage extends StatelessWidget {
+class WatchPage extends StatefulWidget {
   static const route = '/watch';
   const WatchPage({
     super.key,
     required this.videoUrl,
     required this.title,
     required this.id,
+    this.channelName,
+    this.channelId,
   });
 
   final String videoUrl;
   final String title;
   final String id;
+  final String? channelName;
+  final String? channelId;
+
+  @override
+  State<WatchPage> createState() => _WatchPageState();
+}
+
+class _WatchPageState extends State<WatchPage> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<VideoPlayerBloc>()..add(VideoInitialized(videoUrl)),
+      create: (_) =>
+          sl<VideoPlayerBloc>()..add(VideoInitialized(widget.videoUrl)),
       child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Column(
-            children: [
-              _VideoPlayerSection(title: title, id: id),
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  children: [
-                    _VideoInfoSection(title: title),
-                    const _ChannelInfoSection(),
-                    _ActionButtonsSection(videoUrl: videoUrl),
-                    const _DescriptionSection(),
-                    Divider(height: 1.h, color: Colors.grey[300]),
-                    _CommentsSection(videoId: id),
-                    Divider(height: 1.h, color: Colors.grey[300]),
-                    const _UpNextSection(),
-                  ],
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: OrientationBuilder(
+          builder: (context, orientation) {
+            if (orientation == Orientation.landscape) {
+              return Container(
+                color: Colors.black,
+                child: Center(
+                  child: _VideoPlayerSection(
+                    title: widget.title,
+                    id: widget.id,
+                  ),
                 ),
+              );
+            }
+            return SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  _VideoPlayerSection(title: widget.title, id: widget.id),
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.zero,
+                      children: [
+                        _VideoInfoSection(title: widget.title),
+                        _ChannelInfoSection(
+                          channelName: widget.channelName,
+                          channelId: widget.channelId,
+                        ),
+                        _ActionButtonsSection(videoUrl: widget.videoUrl),
+                        const _DescriptionSection(),
+                        Divider(
+                          height: 1.h,
+                          color: Theme.of(context).dividerColor,
+                        ),
+                        _CommentsSection(videoId: widget.id),
+                        Divider(
+                          height: 1.h,
+                          color: Theme.of(context).dividerColor,
+                        ),
+                        const _UpNextSection(),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -75,8 +134,10 @@ class _VideoPlayerSection extends StatelessWidget {
                 aspectRatio: 16 / 9,
                 child: Container(
                   color: Colors.black,
-                  child: const Center(
-                    child: CircularProgressIndicator(color: Colors.red),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
               ),
@@ -105,32 +166,428 @@ class _VideoPlayerSection extends StatelessWidget {
           tag: 'video_thumb_$id',
           child: Material(
             color: Colors.black,
-            child: Stack(
+            child: AspectRatio(
+              aspectRatio: controller.value.aspectRatio,
+              child: _CustomVideoPlayerControls(controller: controller),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CustomVideoPlayerControls extends StatefulWidget {
+  const _CustomVideoPlayerControls({required this.controller});
+  final VideoPlayerController controller;
+
+  @override
+  State<_CustomVideoPlayerControls> createState() =>
+      _CustomVideoPlayerControlsState();
+}
+
+class _CustomVideoPlayerControlsState
+    extends State<_CustomVideoPlayerControls> {
+  bool _showControls = true;
+  Timer? _hideTimer;
+  bool _showSeekIndicator = false;
+  bool _isSeekForward = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startHideTimer();
+  }
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startHideTimer() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted && widget.controller.value.isPlaying) {
+        setState(() {
+          _showControls = false;
+        });
+      }
+    });
+  }
+
+  void _toggleControls() {
+    setState(() {
+      _showControls = !_showControls;
+    });
+    if (_showControls) {
+      _startHideTimer();
+    } else {
+      _hideTimer?.cancel();
+    }
+  }
+
+  void _onSideDoubleTap(bool isLeft) {
+    _startHideTimer();
+    final current = widget.controller.value.position;
+    final seekDuration = isLeft
+        ? -const Duration(seconds: 10)
+        : const Duration(seconds: 10);
+    final newPosition = current + seekDuration;
+
+    context.read<VideoPlayerBloc>().add(VideoSeekRequested(newPosition));
+
+    // Show visual feedback
+    setState(() {
+      _showSeekIndicator = true;
+      _isSeekForward = !isLeft;
+    });
+
+    Timer(const Duration(milliseconds: 600), () {
+      if (mounted) {
+        setState(() {
+          _showSeekIndicator = false;
+        });
+      }
+    });
+
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Seeked 10s ${isLeft ? 'back' : 'forward'}'),
+        duration: const Duration(milliseconds: 500),
+      ),
+    );
+  }
+
+  void _toggleFullScreen() {
+    final orientation = MediaQuery.of(context).orientation;
+    if (orientation == Orientation.portrait) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    }
+  }
+
+  void _handleHorizontalDrag(DragUpdateDetails details) {
+    // Scaffold simple seek on drag
+    final double dx = details.delta.dx;
+    final Duration currentPosition = widget.controller.value.position;
+    final Duration newPosition =
+        currentPosition + Duration(seconds: (dx / 5).round());
+    if (newPosition.inSeconds >= 0 &&
+        newPosition.inSeconds <= widget.controller.value.duration.inSeconds) {
+      context.read<VideoPlayerBloc>().add(VideoSeekRequested(newPosition));
+    }
+  }
+
+  void _handleVerticalDrag(DragUpdateDetails details, double screenWidth) {
+    final double dy = details.delta.dy;
+    // Drag down implies decrease (positive dy), drag up implies increase (negative dy)
+    final double delta = -(dy / 200);
+
+    if (details.globalPosition.dx < screenWidth / 2) {
+      // Left side: Brightness
+      context.read<VideoPlayerBloc>().add(VideoBrightnessGestureChanged(delta));
+    } else {
+      // Right side: Volume
+      context.read<VideoPlayerBloc>().add(VideoVolumeGestureChanged(delta));
+    }
+    _startHideTimer();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+
+    return GestureDetector(
+      onTap: _toggleControls,
+      onHorizontalDragUpdate: _handleHorizontalDrag,
+      onVerticalDragUpdate: (details) => _handleVerticalDrag(details, width),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Center(
+            child: AspectRatio(
+              aspectRatio: widget.controller.value.aspectRatio,
+              child: VideoPlayer(widget.controller),
+            ),
+          ),
+          // Double-tap detectors (always active, translucent)
+          Positioned.fill(
+            child: Row(
               children: [
-                AspectRatio(
-                  aspectRatio: controller.value.aspectRatio,
+                Expanded(
                   child: GestureDetector(
-                    onTap: () => context.read<VideoPlayerBloc>().add(
-                      VideoPlayPauseToggled(),
-                    ),
-                    child: VideoPlayer(controller),
+                    onDoubleTap: () => _onSideDoubleTap(true),
+                    behavior: HitTestBehavior.translucent,
                   ),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: VideoProgressIndicator(
-                    controller,
-                    allowScrubbing: true,
-                    colors: const VideoProgressColors(playedColor: Colors.red),
+                Expanded(
+                  child: GestureDetector(
+                    onDoubleTap: () => _onSideDoubleTap(false),
+                    behavior: HitTestBehavior.translucent,
                   ),
                 ),
               ],
             ),
           ),
-        );
-      },
+          // Seek Indicator Overlay
+          if (_showSeekIndicator)
+            Positioned(
+              left: _isSeekForward ? null : 0,
+              right: _isSeekForward ? 0 : null,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: width / 3,
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.horizontal(
+                    left: _isSeekForward ? Radius.circular(100) : Radius.zero,
+                    right: _isSeekForward ? Radius.zero : Radius.circular(100),
+                  ),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _isSeekForward
+                            ? Icons.fast_forward_rounded
+                            : Icons.fast_rewind_rounded,
+                        color: Colors.white,
+                        size: 40.sp,
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        '10 seconds',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.sp,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          AnimatedOpacity(
+            opacity: _showControls ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: IgnorePointer(
+              ignoring: !_showControls,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Container(color: Colors.black54),
+                  Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          iconSize: 36,
+                          color: Colors.white,
+                          icon: const Icon(Icons.skip_previous_rounded),
+                          onPressed: () {
+                            _startHideTimer();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Previous video')),
+                            );
+                          },
+                        ),
+                        SizedBox(width: 24.w),
+                        ValueListenableBuilder(
+                          valueListenable: widget.controller,
+                          builder: (context, VideoPlayerValue value, child) {
+                            return IconButton(
+                              iconSize: 56,
+                              color: Colors.white,
+                              icon: Icon(
+                                value.isPlaying
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
+                              ),
+                              onPressed: () {
+                                _startHideTimer();
+                                context.read<VideoPlayerBloc>().add(
+                                  VideoPlayPauseToggled(),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                        SizedBox(width: 24.w),
+                        IconButton(
+                          iconSize: 36,
+                          color: Colors.white,
+                          icon: const Icon(Icons.skip_next_rounded),
+                          onPressed: () {
+                            _startHideTimer();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Next video')),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.speed_rounded,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    _startHideTimer();
+                                    final currentSpeed =
+                                        widget.controller.value.playbackSpeed;
+                                    final newSpeed = currentSpeed >= 2.0
+                                        ? 0.5
+                                        : currentSpeed + 0.25;
+                                    context.read<VideoPlayerBloc>().add(
+                                      VideoSpeedChanged(newSpeed),
+                                    );
+                                  },
+                                ),
+                                ValueListenableBuilder(
+                                  valueListenable: widget.controller,
+                                  builder:
+                                      (context, VideoPlayerValue value, child) {
+                                        return Text(
+                                          '${value.playbackSpeed}x',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12.sp,
+                                          ),
+                                        );
+                                      },
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.hd_rounded,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    _startHideTimer();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Quality changed to 1080p',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.picture_in_picture_alt_rounded,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    _startHideTimer();
+                                    context.read<VideoPlayerBloc>().add(
+                                      VideoPipToggled(),
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Picture-in-Picture activated',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.fullscreen_rounded,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    _startHideTimer();
+                                    _toggleFullScreen();
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        ValueListenableBuilder(
+                          valueListenable: widget.controller,
+                          builder: (context, VideoPlayerValue value, child) {
+                            final position = value.position;
+                            final duration = value.duration;
+                            return Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16.w,
+                                vertical: 8.h,
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    '${position.inMinutes}:${(position.inSeconds % 60).toString().padLeft(2, '0')}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12.sp,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.w,
+                                      ),
+                                      child: VideoProgressIndicator(
+                                        widget.controller,
+                                        allowScrubbing: true,
+                                        colors: const VideoProgressColors(
+                                          playedColor: Colors.red,
+                                        ),
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    '${duration.inMinutes}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12.sp,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -151,7 +608,7 @@ class _VideoInfoSection extends StatelessWidget {
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
               height: 1.2,
             ),
             maxLines: 2,
@@ -160,7 +617,10 @@ class _VideoInfoSection extends StatelessWidget {
           SizedBox(height: 4.h),
           Text(
             '1.2M views • 2 months ago',
-            style: TextStyle(fontSize: 12.sp, color: Colors.grey[700]),
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -169,52 +629,77 @@ class _VideoInfoSection extends StatelessWidget {
 }
 
 class _ChannelInfoSection extends StatelessWidget {
-  const _ChannelInfoSection();
+  const _ChannelInfoSection({this.channelName, this.channelId});
+  final String? channelName;
+  final String? channelId;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18.r,
-            backgroundImage: const NetworkImage(
-              'https://picsum.photos/id/1005/200/200',
+    return InkWell(
+      onTap: () {
+        if (channelId != null) {
+          context.push('/channel/$channelId');
+        }
+      },
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18.r,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest,
+              backgroundImage: channelName != null && channelName!.isNotEmpty
+                  ? CachedNetworkImageProvider(
+                      'https://ui-avatars.com/api/?name=${Uri.encodeComponent(channelName!)}&background=random&format=png',
+                    )
+                  : null,
+              child: channelName == null || channelName!.isEmpty
+                  ? Icon(
+                      Icons.person,
+                      color: Theme.of(
+                        context,
+                      ).iconTheme.color?.withOpacity(0.5),
+                    )
+                  : null,
             ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Awesome Channel',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    fontSize: 15.sp,
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    channelName ?? 'Unknown Channel',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      fontSize: 15.sp,
+                    ),
                   ),
-                ),
-                Text(
-                  '2.5M subscribers',
-                  style: TextStyle(fontSize: 12.sp, color: Colors.grey[700]),
-                ),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.r),
+                  Text(
+                    '2.5M subscribers',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: const Text('Subscribe'),
-          ),
-        ],
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+                foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+              ),
+              child: const Text('Subscribe'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -301,7 +786,7 @@ class _ActionButtonsSectionState extends State<_ActionButtonsSection>
               child: Icon(
                 _isLiked ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
                 size: 20.sp,
-                color: _isLiked ? Colors.black : Colors.black,
+                color: Theme.of(context).iconTheme.color,
               ),
             ),
             label: '125K',
@@ -309,7 +794,11 @@ class _ActionButtonsSectionState extends State<_ActionButtonsSection>
           ),
           SizedBox(width: 8.w),
           _ActionButton(
-            icon: Icon(Icons.share_outlined, size: 20.sp, color: Colors.black),
+            icon: Icon(
+              Icons.share_outlined,
+              size: 20.sp,
+              color: Theme.of(context).iconTheme.color,
+            ),
             label: 'Share',
             onTap: () {
               Share.share('Check out this awesome video: ${widget.videoUrl}');
@@ -324,13 +813,13 @@ class _ActionButtonsSectionState extends State<_ActionButtonsSection>
                     child: CircularProgressIndicator(
                       value: _downloadProgress,
                       strokeWidth: 2,
-                      color: Colors.black,
+                      color: Theme.of(context).iconTheme.color,
                     ),
                   )
                 : Icon(
                     Icons.download_outlined,
                     size: 20.sp,
-                    color: Colors.black,
+                    color: Theme.of(context).iconTheme.color,
                   ),
             label: _isDownloading
                 ? '${(_downloadProgress * 100).toInt()}%'
@@ -342,7 +831,7 @@ class _ActionButtonsSectionState extends State<_ActionButtonsSection>
             icon: Icon(
               Icons.library_add_outlined,
               size: 20.sp,
-              color: Colors.black,
+              color: Theme.of(context).iconTheme.color,
             ),
             label: 'Save',
             onTap: () {},
@@ -371,7 +860,9 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         decoration: BoxDecoration(
-          color: Colors.grey[200],
+          color: Theme.of(
+            context,
+          ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
           borderRadius: BorderRadius.circular(20.r),
         ),
         child: Row(
@@ -384,7 +875,7 @@ class _ActionButton extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 fontSize: 13.sp,
-                color: Colors.black,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
           ],
@@ -412,7 +903,9 @@ class _DescriptionSectionState extends State<_DescriptionSection> {
         margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         padding: EdgeInsets.all(12.w),
         decoration: BoxDecoration(
-          color: Colors.grey[200],
+          color: Theme.of(
+            context,
+          ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Column(
@@ -423,7 +916,7 @@ class _DescriptionSectionState extends State<_DescriptionSection> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 13.sp,
-                color: Colors.black,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             SizedBox(height: 4.h),
@@ -431,7 +924,10 @@ class _DescriptionSectionState extends State<_DescriptionSection> {
               'This is a description for the video. It can be quite long, so we truncate it initially and let the user expand it to read more details about the content, links, and timestamps.',
               maxLines: _isExpanded ? null : 2,
               overflow: _isExpanded ? null : TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 13.sp, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
             ),
             if (!_isExpanded)
               Padding(
@@ -441,7 +937,7 @@ class _DescriptionSectionState extends State<_DescriptionSection> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13.sp,
-                    color: Colors.black,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
               ),
@@ -498,8 +994,10 @@ class _CommentsSectionState extends State<_CommentsSection> {
     if (_isLoading) {
       return Padding(
         padding: EdgeInsets.all(16.w),
-        child: const Center(
-          child: CircularProgressIndicator(color: Colors.red),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
       );
     }
@@ -509,7 +1007,9 @@ class _CommentsSectionState extends State<_CommentsSection> {
         padding: EdgeInsets.all(16.w),
         child: Text(
           'Failed to load comments.',
-          style: TextStyle(color: Colors.grey[700]),
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
         ),
       );
     }
@@ -519,7 +1019,9 @@ class _CommentsSectionState extends State<_CommentsSection> {
         padding: EdgeInsets.all(16.w),
         child: Text(
           'No comments yet.',
-          style: TextStyle(color: Colors.grey[700]),
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
         ),
       );
     }
@@ -534,7 +1036,7 @@ class _CommentsSectionState extends State<_CommentsSection> {
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
           SizedBox(height: 12.h),
@@ -567,7 +1069,9 @@ class _CommentsSectionState extends State<_CommentsSection> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w500,
                                   fontSize: 13.sp,
-                                  color: Colors.black87,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.color,
                                 ),
                               ),
                               SizedBox(width: 8.w),
@@ -575,7 +1079,9 @@ class _CommentsSectionState extends State<_CommentsSection> {
                                 timeago.format(comment.publishedAt),
                                 style: TextStyle(
                                   fontSize: 12.sp,
-                                  color: Colors.grey[600],
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -585,7 +1091,9 @@ class _CommentsSectionState extends State<_CommentsSection> {
                             comment.textDisplay,
                             style: TextStyle(
                               fontSize: 14.sp,
-                              color: Colors.black,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color,
                               height: 1.3,
                             ),
                           ),
@@ -595,7 +1103,9 @@ class _CommentsSectionState extends State<_CommentsSection> {
                               Icon(
                                 Icons.thumb_up_alt_outlined,
                                 size: 14.sp,
-                                color: Colors.grey[700],
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                               SizedBox(width: 4.w),
                               Text(
@@ -604,14 +1114,18 @@ class _CommentsSectionState extends State<_CommentsSection> {
                                     : '',
                                 style: TextStyle(
                                   fontSize: 12.sp,
-                                  color: Colors.grey[700],
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               SizedBox(width: 16.w),
                               Icon(
                                 Icons.thumb_down_alt_outlined,
                                 size: 14.sp,
-                                color: Colors.grey[700],
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             ],
                           ),
@@ -668,7 +1182,7 @@ class _UpNextSection extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 14.sp,
-                        color: Colors.black,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -678,7 +1192,7 @@ class _UpNextSection extends StatelessWidget {
                       'Channel Name\n100K views • 1 day ago',
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: Colors.grey[700],
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/entities/video.dart';
 import '../../presentation/pages/home_feed_page.dart';
 import '../../presentation/pages/shorts_page.dart';
 import '../../presentation/pages/subscriptions_page.dart';
@@ -11,6 +12,7 @@ import '../../presentation/pages/splash_page.dart';
 import '../../presentation/pages/auth_page.dart';
 import '../../presentation/pages/main_navigation_page.dart';
 import '../../presentation/pages/search_page.dart';
+import '../../presentation/pages/channel_profile_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
@@ -67,7 +69,14 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: ShortsPage.route,
-              builder: (context, state) => const ShortsPage(),
+              builder: (context, state) {
+                final args = state.extra as Map<String, dynamic>? ?? {};
+                return ShortsPage(
+                  initialVideos: args['initialVideos'] as List<Vido>?,
+                  initialIndex: args['initialIndex'] as int?,
+                  nextPageToken: args['nextPageToken'] as String?,
+                );
+              },
             ),
           ],
         ),
@@ -114,13 +123,41 @@ final GoRouter appRouter = GoRouter(
         final videoUrl = args['videoUrl'] as String? ?? '';
         final title = args['title'] as String? ?? '';
         final id = args['id'] as String? ?? '';
-        return WatchPage(videoUrl: videoUrl, title: title, id: id);
+        final channelName = args['channelName'] as String?;
+        final channelId = args['channelId'] as String?;
+        return WatchPage(
+          videoUrl: videoUrl,
+          title: title,
+          id: id,
+          channelName: channelName,
+          channelId: channelId,
+        );
       },
     ),
     GoRoute(
       path: SearchPage.route,
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const SearchPage(),
+    ),
+    GoRoute(
+      path: '/shorts_player',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final args = state.extra as Map<String, dynamic>? ?? {};
+        return ShortsPage(
+          initialVideos: args['initialVideos'] as List<Vido>?,
+          initialIndex: args['initialIndex'] as int?,
+          nextPageToken: args['nextPageToken'] as String?,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/channel/:channelId',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final channelId = state.pathParameters['channelId']!;
+        return ChannelProfilePage(channelId: channelId);
+      },
     ),
   ],
 );
