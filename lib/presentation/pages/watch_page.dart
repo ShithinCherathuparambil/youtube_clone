@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../domain/entities/comment.dart';
 import '../../domain/usecases/get_comments.dart';
@@ -1196,10 +1197,24 @@ class _CommentsSectionState extends State<_CommentsSection> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 16.r,
-                      backgroundImage: NetworkImage(
-                        comment.authorProfileImageUrl,
+                    CachedNetworkImage(
+                      imageUrl: comment.authorProfileImageUrl,
+                      imageBuilder: (context, imageProvider) => CircleAvatar(
+                        radius: 16.r,
+                        backgroundImage: imageProvider,
+                      ),
+                      placeholder: (context, url) => CircleAvatar(
+                        radius: 16.r,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                      ),
+                      errorWidget: (context, url, error) => CircleAvatar(
+                        radius: 16.r,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                        child: Icon(Icons.person, size: 16.sp),
                       ),
                     ),
                     SizedBox(width: 12.w),
@@ -1304,16 +1319,29 @@ class _UpNextSection extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 160.w,
-                height: 90.h,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8.r),
-                  image: const DecorationImage(
-                    image: NetworkImage(
-                      'https://picsum.photos/seed/picsum/160/90',
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8.r),
+                child: CachedNetworkImage(
+                  imageUrl: 'https://picsum.photos/seed/picsum/160/90',
+                  width: 160.w,
+                  height: 90.h,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    child: Center(
+                      child: Icon(
+                        FontAwesomeIcons.youtube,
+                        color: Colors.red.withValues(alpha: 0.5),
+                        size: 30.sp,
+                      ),
                     ),
-                    fit: BoxFit.cover,
                   ),
                 ),
               ),

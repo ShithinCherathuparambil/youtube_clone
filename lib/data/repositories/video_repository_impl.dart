@@ -3,6 +3,7 @@ import 'package:injectable/injectable.dart';
 
 import '../../core/error/exceptions.dart';
 import '../../core/error/failures.dart';
+import '../../core/network/network_info.dart';
 import '../../domain/entities/channel.dart';
 import '../../domain/entities/comment.dart';
 import '../../domain/entities/paginated_videos.dart';
@@ -13,15 +14,19 @@ import '../datasources/video_remote_data_source.dart';
 
 @LazySingleton(as: VideoRepository)
 class VideoRepositoryImpl implements VideoRepository {
-  VideoRepositoryImpl(this._remoteDataSource);
+  VideoRepositoryImpl(this._remoteDataSource, this._networkInfo);
 
   final VideoRemoteDataSource _remoteDataSource;
+  final NetworkInfo _networkInfo;
 
   @override
   Future<Either<Failure, PaginatedVideos>> getHomeVideos({
     String? pageToken,
     String? categoryId,
   }) async {
+    if (!await _networkInfo.isConnected) {
+      return const Left(ConnectionFailure());
+    }
     try {
       final result = await _remoteDataSource.getHomeVideos(
         pageToken: pageToken,
@@ -39,6 +44,9 @@ class VideoRepositoryImpl implements VideoRepository {
   Future<Either<Failure, PaginatedVideos>> getShorts({
     String? pageToken,
   }) async {
+    if (!await _networkInfo.isConnected) {
+      return const Left(ConnectionFailure());
+    }
     try {
       final result = await _remoteDataSource.getShorts(pageToken: pageToken);
       return Right(result);
@@ -51,6 +59,9 @@ class VideoRepositoryImpl implements VideoRepository {
 
   @override
   Future<Either<Failure, List<Comment>>> getComments(String videoId) async {
+    if (!await _networkInfo.isConnected) {
+      return const Left(ConnectionFailure());
+    }
     try {
       final result = await _remoteDataSource.getComments(videoId);
       return Right(result);
@@ -63,6 +74,9 @@ class VideoRepositoryImpl implements VideoRepository {
 
   @override
   Future<Either<Failure, List<Channel>>> getPopularChannels() async {
+    if (!await _networkInfo.isConnected) {
+      return const Left(ConnectionFailure());
+    }
     try {
       final result = await _remoteDataSource.getPopularChannels();
       return Right(result);
@@ -78,6 +92,9 @@ class VideoRepositoryImpl implements VideoRepository {
     String query, {
     String? pageToken,
   }) async {
+    if (!await _networkInfo.isConnected) {
+      return const Left(ConnectionFailure());
+    }
     try {
       final result = await _remoteDataSource.searchVideos(
         query,
@@ -93,6 +110,9 @@ class VideoRepositoryImpl implements VideoRepository {
 
   @override
   Future<Either<Failure, List<VideoCategory>>> getVideoCategories() async {
+    if (!await _networkInfo.isConnected) {
+      return const Left(ConnectionFailure());
+    }
     try {
       final models = await _remoteDataSource.getVideoCategories();
       final entities = models
@@ -114,6 +134,9 @@ class VideoRepositoryImpl implements VideoRepository {
 
   @override
   Future<Either<Failure, List<Playlist>>> getPlaylists(String channelId) async {
+    if (!await _networkInfo.isConnected) {
+      return const Left(ConnectionFailure());
+    }
     try {
       final models = await _remoteDataSource.getPlaylists(channelId);
       final entities = models
@@ -138,6 +161,9 @@ class VideoRepositoryImpl implements VideoRepository {
 
   @override
   Future<Either<Failure, Channel>> getChannelDetails(String channelId) async {
+    if (!await _networkInfo.isConnected) {
+      return const Left(ConnectionFailure());
+    }
     try {
       final result = await _remoteDataSource.getChannelDetails(channelId);
       return Right(result);

@@ -1,0 +1,63 @@
+{
+  "@@locale": "ur",
+  "appTitle": "یوٹیوب کلون",
+  "home": "ہوم",
+  "shorts": "شارٹس",
+  "subscriptions": "سبسکرپشنز",
+  "library": "آپ",
+  "settings": "ترتیبات",
+  "appearance": "ظاہری شکل",
+  "language": "زبان",
+  "signOut": "سائن آؤٹ",
+  "editProfile": "پروفائل میں ترمیم کریں",
+  "name": "نام",
+  "handle": "ہینڈل",
+  "save": "محفوظ کریں",
+  "cancel": "منسوخ کریں",
+  "history": "تاریخ",
+  "playlists": "پلے لسٹس",
+  "viewAll": "سب دیکھیں",
+  "yourVideos": "آپ کی ویڈیوز",
+  "downloads": "ڈاؤن لوڈز",
+  "getPremium": "یوٹیوب پریمیم حاصل کریں",
+  "timeWatched": "دیکھنے کا وقت",
+  "helpFeedback": "مدد اور تاثرات",
+  "search": "تلاش کریں",
+  "create": "بنائیں",
+  "createShort": "شارٹ بنائیں",
+  "uploadVideo": "ویڈیو اپ لوڈ کریں",
+  "goLive": "لائیو جائیں",
+  "createPost": "ایک پوسٹ بنائیں",
+  "switchAccount": "اکاؤنٹ تبدیل کریں",
+  "googleAccount": "گوگل اکاؤنٹ",
+  "incognito": "انکوگنیٹو آن کریں",
+  "deleteDownloads": "ڈاؤن لوڈز حذف کریں",
+  "deleteSelectedVideos": "{count} منتخب ویڈیوز حذف کریں؟",
+  "@deleteSelectedVideos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noDownloadsYet": "ابھی تک کوئی ڈاؤن لوڈ نہیں ہے",
+  "videosAppearHere": "آپ کی ڈاؤن لوڈ کردہ ویڈیوز یہاں نظر آئیں گی",
+  "availableStorage": "دستیاب اسٹوریج",
+  "gbFree": "{count} GB خالی ہے",
+  "@gbFree": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "usedByYoutube": "YouTube کے زیر استعمال",
+  "freeSpace": "خالی جگہ",
+  "videoEncrypted": "ویڈیو • انکرپٹڈ",
+  "pause": "روکیں",
+  "resume": "دوبارہ شروع کریں",
+  "delete": "حذف کریں",
+  "useDeviceTheme": "ڈیوائس تھیم استعمال کریں",
+  "lightTheme": "لائٹ تھیم",
+  "darkTheme": "ڈارک تھیم"
+}

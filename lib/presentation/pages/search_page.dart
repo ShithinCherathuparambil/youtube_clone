@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../injection_container.dart';
 import '../../domain/entities/video.dart';
 import '../../domain/usecases/search_videos.dart';
-import '../../injection_container.dart';
-import 'home_feed_page.dart';
+import '../widgets/video_card.dart';
 
 class SearchPage extends StatefulWidget {
   static const route = '/search';
@@ -139,7 +139,7 @@ class _SearchPageState extends State<SearchPage> {
               fontSize: 16.sp,
               color: Theme.of(
                 context,
-              ).textTheme.bodyMedium?.color?.withOpacity(0.5),
+              ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
             ),
             border: InputBorder.none,
           ),
@@ -221,7 +221,7 @@ class _SearchPageState extends State<SearchPage> {
       itemBuilder: (context, index) {
         if (index == _videos.length) {
           return Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Center(
               child: CircularProgressIndicator(
                 color: Theme.of(context).colorScheme.primary,

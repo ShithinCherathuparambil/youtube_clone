@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -5,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:youtube_clone/l10n/app_localizations.dart';
 import '../../core/constants/youtube_icons.dart';
 import '../../domain/entities/playlist.dart';
 import '../../domain/usecases/get_playlists.dart';
@@ -12,6 +14,7 @@ import '../../injection_container.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_state.dart';
+import '../bloc/profile/profile_cubit.dart';
 
 class ProfilePage extends StatefulWidget {
   static const route = '/library';
@@ -103,49 +106,71 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             IconButton(
               icon: const Icon(FontAwesomeIcons.magnifyingGlass, size: 22),
-              onPressed: () {},
+              onPressed: () => context.push('/search'),
             ),
             IconButton(
               icon: const Icon(FontAwesomeIcons.gear, size: 22),
-              onPressed: () {},
+              onPressed: () => context.push('/settings'),
             ),
           ],
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildProfileHeader(),
-              SizedBox(height: 16.h),
-              _buildAccountChips(),
-              SizedBox(height: 24.h),
-              _buildHistorySection(),
-              SizedBox(height: 24.h),
-              _buildPlaylistsSection(),
-              SizedBox(height: 24.h),
-              _buildVideoActions(context),
-              SizedBox(height: 16.h),
-              Divider(height: 1.h, color: Theme.of(context).dividerColor),
-              SizedBox(height: 8.h),
-              _buildPremiumActions(context),
-              SizedBox(height: 40.h),
-            ],
-          ),
+        body: BlocBuilder<ProfileCubit, ProfileState>(
+          builder: (context, state) {
+            String name = 'Shithin Cp';
+            String handle = '@shithincp1484';
+            String? imagePath;
+
+            if (state is ProfileLoaded) {
+              name = state.name;
+              handle = state.handle;
+              imagePath = state.profileImagePath;
+            }
+
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildProfileHeader(context, name, handle, imagePath),
+                  SizedBox(height: 16.h),
+                  _buildAccountChips(context),
+                  SizedBox(height: 24.h),
+                  _buildHistorySection(context),
+                  SizedBox(height: 24.h),
+                  _buildPlaylistsSection(context),
+                  SizedBox(height: 24.h),
+                  _buildVideoActions(context),
+                  SizedBox(height: 16.h),
+                  Divider(height: 1.h, color: Theme.of(context).dividerColor),
+                  SizedBox(height: 8.h),
+                  _buildPremiumActions(context),
+                  SizedBox(height: 40.h),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(
+    BuildContext context,
+    String name,
+    String handle,
+    String? imagePath,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
         children: [
           CircleAvatar(
             radius: 40.r,
-            backgroundImage: const CachedNetworkImageProvider(
-              'https://picsum.photos/id/1027/200/200',
-            ),
+            backgroundImage: imagePath != null
+                ? FileImage(File(imagePath)) as ImageProvider
+                : const CachedNetworkImageProvider(
+                    'https://picsum.photos/id/1027/200/200',
+                  ),
           ),
           SizedBox(width: 16.w),
           Expanded(
@@ -153,7 +178,7 @@ class _ProfilePageState extends State<ProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Shithin Cp',
+                  name,
                   style: TextStyle(
                     fontSize: 24.sp,
                     fontWeight: FontWeight.w700,
@@ -164,14 +189,16 @@ class _ProfilePageState extends State<ProfilePage> {
                 SizedBox(height: 4.h),
                 Row(
                   children: [
-                    Text(
-                      '@shithincp1484',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.color?.withOpacity(0.87),
-                        fontWeight: FontWeight.w400,
+                    Flexible(
+                      child: Text(
+                        handle,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Theme.of(context).textTheme.bodyMedium?.color
+                              ?.withValues(alpha: 0.87),
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Text(
@@ -180,21 +207,29 @@ class _ProfilePageState extends State<ProfilePage> {
                         fontSize: 13.sp,
                         color: Theme.of(
                           context,
-                        ).textTheme.bodyMedium?.color?.withOpacity(0.87),
+                        ).textTheme.bodyMedium?.color?.withValues(alpha: 0.87),
                       ),
                     ),
                     InkWell(
-                      onTap: () =>
-                          context.push('/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw'),
+                      onTap: () => context.push(
+                        '/edit-profile',
+                        extra: {
+                          'name': name,
+                          'handle': handle,
+                          'imagePath': imagePath,
+                        },
+                      ),
                       child: Row(
                         children: [
                           Text(
-                            'View channel',
+                            l10n.editProfile,
                             style: TextStyle(
                               fontSize: 13.sp,
-                              color: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.color?.withOpacity(0.87),
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.color
+                                  ?.withValues(alpha: 0.87),
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -203,7 +238,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             size: 16.sp,
                             color: Theme.of(
                               context,
-                            ).iconTheme.color?.withOpacity(0.87),
+                            ).iconTheme.color?.withValues(alpha: 0.87),
                           ),
                         ],
                       ),
@@ -218,17 +253,18 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildAccountChips() {
+  Widget _buildAccountChips(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
         children: [
-          _buildChip(FontAwesomeIcons.idBadge, 'Switch account'),
+          _buildChip(FontAwesomeIcons.idBadge, l10n.switchAccount),
           SizedBox(width: 8.w),
-          _buildChip(FontAwesomeIcons.google, 'Google Account'),
+          _buildChip(FontAwesomeIcons.google, l10n.googleAccount),
           SizedBox(width: 8.w),
-          _buildChip(FontAwesomeIcons.userSecret, 'Turn on Incognito'),
+          _buildChip(FontAwesomeIcons.userSecret, l10n.incognito),
         ],
       ),
     );
@@ -251,7 +287,7 @@ class _ProfilePageState extends State<ProfilePage> {
             size: 14.sp,
             color: Theme.of(
               context,
-            ).textTheme.bodyMedium?.color?.withOpacity(0.87),
+            ).textTheme.bodyMedium?.color?.withValues(alpha: 0.87),
           ),
           SizedBox(width: 6.w),
           Text(
@@ -261,7 +297,7 @@ class _ProfilePageState extends State<ProfilePage> {
               fontWeight: FontWeight.w500,
               color: Theme.of(
                 context,
-              ).textTheme.bodyMedium?.color?.withOpacity(0.87),
+              ).textTheme.bodyMedium?.color?.withValues(alpha: 0.87),
             ),
           ),
         ],
@@ -269,7 +305,8 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildHistorySection() {
+  Widget _buildHistorySection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -279,7 +316,7 @@ class _ProfilePageState extends State<ProfilePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'History',
+                l10n.history,
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
@@ -294,7 +331,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   borderRadius: BorderRadius.circular(16.r),
                 ),
                 child: Text(
-                  'View all',
+                  l10n.viewAll,
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w500,
@@ -507,7 +544,8 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildPlaylistsSection() {
+  Widget _buildPlaylistsSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -517,7 +555,7 @@ class _ProfilePageState extends State<ProfilePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Playlists',
+                l10n.playlists,
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
@@ -543,7 +581,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                     child: Text(
-                      'View all',
+                      l10n.viewAll,
                       style: TextStyle(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
@@ -613,7 +651,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 height: 90.h,
                 width: 160.w,
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Column(
@@ -678,12 +716,13 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildVideoActions(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
-        _buildListTile(FontAwesomeIcons.circlePlay, 'Your videos'),
+        _buildListTile(FontAwesomeIcons.circlePlay, l10n.yourVideos),
         _buildListTile(
           FontAwesomeIcons.download,
-          'Downloads',
+          l10n.downloads,
           onTap: () => context.push('/library/downloads'),
         ),
         _buildListTile(FontAwesomeIcons.film, 'Movies'),
@@ -692,14 +731,15 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildPremiumActions(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
-        _buildListTile(FontAwesomeIcons.youtube, 'Get YouTube Premium'),
-        _buildListTile(FontAwesomeIcons.clockRotateLeft, 'Time watched'),
-        _buildListTile(FontAwesomeIcons.circleQuestion, 'Help & feedback'),
+        _buildListTile(FontAwesomeIcons.youtube, l10n.getPremium),
+        _buildListTile(FontAwesomeIcons.clockRotateLeft, l10n.timeWatched),
+        _buildListTile(FontAwesomeIcons.circleQuestion, l10n.helpFeedback),
         _buildListTile(
           FontAwesomeIcons.arrowRightFromBracket,
-          'Sign out',
+          l10n.signOut,
           onTap: () {
             context.read<AuthBloc>().add(LogoutRequested());
           },

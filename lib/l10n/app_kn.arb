@@ -1,0 +1,63 @@
+{
+  "@@locale": "kn",
+  "appTitle": "ಯೂಟ್ಯೂಬ್ ಕ್ಲೋನ್",
+  "home": "ಹೋಮ್",
+  "shorts": "ಶಾರ್ಟ್ಸ್",
+  "subscriptions": "ಚಂದಾದಾರಿಕೆಗಳು",
+  "library": "ನೀವು",
+  "settings": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+  "appearance": "ಕಾಣಿಸಿಕೊಳ್ಳುವಿಕೆ",
+  "language": "ಭಾಷೆ",
+  "signOut": "ಸೈನ್ ಔಟ್",
+  "editProfile": "ಪ್ರೊಫೈಲ್ ಎಡಿಟ್ ಮಾಡಿ",
+  "name": "ಹೆಸರು",
+  "handle": "ಹ್ಯಾಂಡಲ್",
+  "save": "ಉಳಿಸಿ",
+  "cancel": "ರದ್ದುಮಾಡಿ",
+  "history": "ಇತಿಹಾಸ",
+  "playlists": "ಪ್ಲೇಲಿಸ್ಟ್‌ಗಳು",
+  "viewAll": "ಎಲ್ಲವನ್ನೂ ವೀಕ್ಷಿಸಿ",
+  "yourVideos": "ನಿಮ್ಮ ವೀಡಿಯೊಗಳು",
+  "downloads": "ಡೌನ್‌ಲೋಡ್‌ಗಳು",
+  "getPremium": "ಯೂಟ್ಯೂಬ್ ಪ್ರೀಮಿಯಂ ಪಡೆಯಿರಿ",
+  "timeWatched": "ವೀಕ್ಷಿಸಿದ ಸಮಯ",
+  "helpFeedback": "ಸಹಾಯ ಮತ್ತು ಪ್ರತಿಕ್ರಿಯೆ",
+  "search": "ಹುಡುಕಿ",
+  "create": "ರಚಿಸಿ",
+  "createShort": "ಶಾರ್ಟ್ ರಚಿಸಿ",
+  "uploadVideo": "ವೀಡಿಯೊ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",
+  "goLive": "ಲೈವ್ ಹೋಗಿ",
+  "createPost": "ಪೋಸ್ಟ್ ರಚಿಸಿ",
+  "switchAccount": "ಖಾತೆ ಬದಲಾಯಿಸಿ",
+  "googleAccount": "Google ಖಾತೆ",
+  "incognito": "ಅಜ್ಞಾತ ಮೋಡ್ ಆನ್ ಮಾಡಿ",
+  "deleteDownloads": "ಡೌನ್‌ಲೋಡ್‌ಗಳನ್ನು ಅಳಿಸಿ",
+  "deleteSelectedVideos": "{count} ಆಯ್ದ ವೀಡಿಯೊಗಳನ್ನು ಅಳಿಸಬೇಕೆ?",
+  "@deleteSelectedVideos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noDownloadsYet": "ಇನ್ನೂ ಯಾವುದೇ ಡೌನ್‌ಲೋಡ್‌ಗಳಿಲ್ಲ",
+  "videosAppearHere": "ನೀವು ಡೌನ್‌ಲೋಡ್ ಮಾಡುವ ವೀಡಿಯೊಗಳು ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತವೆ",
+  "availableStorage": "ಲಭ್ಯವಿರುವ ಸಂಗ್ರಹಣೆ",
+  "gbFree": "{count} GB ಉಚಿತವಾಗಿದೆ",
+  "@gbFree": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "usedByYoutube": "YouTube ಬಳಸುತ್ತಿದೆ",
+  "freeSpace": "ಉಚಿತ ಸ್ಥಳ",
+  "videoEncrypted": "ವೀಡಿಯೊ • ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಲಾಗಿದೆ",
+  "pause": "ವಿರಾಮ",
+  "resume": "ಮರುಪ್ರಾರಂಭಿಸಿ",
+  "delete": "ಅಳಿಸಿ",
+  "useDeviceTheme": "ಸಾಧನ ಥೀಮ್ ಬಳಸಿ",
+  "lightTheme": "ಲೈಟ್ ಥೀಮ್",
+  "darkTheme": "ಡಾರ್ಕ್ ಥೀಮ್"
+}

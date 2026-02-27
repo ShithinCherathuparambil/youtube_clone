@@ -1,0 +1,63 @@
+{
+  "@@locale": "en",
+  "appTitle": "YouTube Clone",
+  "home": "Home",
+  "shorts": "Shorts",
+  "subscriptions": "Subscriptions",
+  "library": "You",
+  "settings": "Settings",
+  "appearance": "Appearance",
+  "language": "Language",
+  "signOut": "Sign out",
+  "editProfile": "Edit profile",
+  "name": "Name",
+  "handle": "Handle",
+  "save": "SAVE",
+  "cancel": "CANCEL",
+  "history": "History",
+  "playlists": "Playlists",
+  "viewAll": "View all",
+  "yourVideos": "Your videos",
+  "downloads": "Downloads",
+  "getPremium": "Get YouTube Premium",
+  "timeWatched": "Time watched",
+  "helpFeedback": "Help & feedback",
+  "search": "Search",
+  "create": "Create",
+  "createShort": "Create a Short",
+  "uploadVideo": "Upload a video",
+  "goLive": "Go Live",
+  "createPost": "Create a post",
+  "switchAccount": "Switch account",
+  "googleAccount": "Google Account",
+  "incognito": "Turn on Incognito",
+  "deleteDownloads": "Delete Downloads",
+  "deleteSelectedVideos": "Delete {count} selected videos?",
+  "@deleteSelectedVideos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noDownloadsYet": "No downloads yet",
+  "videosAppearHere": "Videos you download will appear here",
+  "availableStorage": "Available Storage",
+  "gbFree": "{count} GB Free",
+  "@gbFree": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "usedByYoutube": "Used by YouTube",
+  "freeSpace": "Free Space",
+  "videoEncrypted": "Video • Encrypted",
+  "pause": "Pause",
+  "resume": "Resume",
+  "delete": "Delete",
+  "useDeviceTheme": "Use device theme",
+  "lightTheme": "Light theme",
+  "darkTheme": "Dark theme"
+}

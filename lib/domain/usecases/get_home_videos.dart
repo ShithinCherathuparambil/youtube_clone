@@ -22,6 +22,7 @@ class GetHomeVideos implements UseCase<PaginatedVideos, GetHomeVideosParams> {
 
   final VideoRepository _repository;
 
+  @override
   Future<Either<Failure, PaginatedVideos>> call(GetHomeVideosParams params) {
     return _repository.getHomeVideos(
       pageToken: params.pageToken,

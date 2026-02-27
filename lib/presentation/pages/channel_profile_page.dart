@@ -1,12 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import '../../domain/entities/channel.dart';
 import '../../domain/entities/video.dart';
 import '../../domain/usecases/get_channel_details.dart';
 import '../../domain/usecases/search_videos.dart';
 import '../../injection_container.dart';
-import 'home_feed_page.dart';
+import '../widgets/video_card.dart';
 
 class ChannelProfilePage extends StatefulWidget {
   final String channelId;
@@ -120,6 +121,15 @@ class _ChannelProfilePageState extends State<ChannelProfilePage>
                         height: 100.h,
                         width: double.infinity,
                         fit: BoxFit.cover,
+                        errorWidget: (context, url, error) => Container(
+                          height: 100.h,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          child: const Center(
+                            child: Icon(Icons.image_not_supported),
+                          ),
+                        ),
                       )
                     else
                       Container(
@@ -179,9 +189,23 @@ class _ChannelProfilePageState extends State<ChannelProfilePage>
       padding: EdgeInsets.all(16.w),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 40.r,
-            backgroundImage: CachedNetworkImageProvider(_channel!.thumbnailUrl),
+          CachedNetworkImage(
+            imageUrl: _channel!.thumbnailUrl,
+            imageBuilder: (context, imageProvider) =>
+                CircleAvatar(radius: 40.r, backgroundImage: imageProvider),
+            placeholder: (context, url) => CircleAvatar(
+              radius: 40.r,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest,
+            ),
+            errorWidget: (context, url, error) => CircleAvatar(
+              radius: 40.r,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest,
+              child: Icon(Icons.person, size: 40.sp),
+            ),
           ),
           SizedBox(height: 12.h),
           Text(

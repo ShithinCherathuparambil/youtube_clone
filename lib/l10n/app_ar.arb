@@ -1,0 +1,63 @@
+{
+  "@@locale": "ar",
+  "appTitle": "يوتيوب كلون",
+  "home": "الرئيسية",
+  "shorts": "شورتس",
+  "subscriptions": "الاشتراكات",
+  "library": "أنت",
+  "settings": "الإعدادات",
+  "appearance": "المظهر",
+  "language": "اللغة",
+  "signOut": "تسجيل الخروج",
+  "editProfile": "تعديل الملف الشخصي",
+  "name": "الاسم",
+  "handle": "المعرف",
+  "save": "حفظ",
+  "cancel": "إلغاء",
+  "history": "السجل",
+  "playlists": "قوائم التشغيل",
+  "viewAll": "عرض الكل",
+  "yourVideos": "فيديوهاتك",
+  "downloads": "التنزيلات",
+  "getPremium": "الحصول على يوتيوب بريميوم",
+  "timeWatched": "وقت المشاهدة",
+  "helpFeedback": "المساعدة والتعليقات",
+  "search": "بحث",
+  "create": "إنشاء",
+  "createShort": "إنشاء فيديو قصير",
+  "uploadVideo": "تحميل فيديو",
+  "goLive": "بث مباشر",
+  "createPost": "إنشاء مشاركة",
+  "switchAccount": "تبديل الحساب",
+  "googleAccount": "حساب جوجل",
+  "incognito": "تفعيل وضع التصفح المتخفي",
+  "deleteDownloads": "حذف التنزيلات",
+  "deleteSelectedVideos": "هل تريد حذف {count} من الفيديوهات المختارة؟",
+  "@deleteSelectedVideos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noDownloadsYet": "لا يوجد تنزيلات بعد",
+  "videosAppearHere": "ستظهر الفيديوهات التي قمت بتنزيلها هنا",
+  "availableStorage": "المساحة المتوفرة",
+  "gbFree": "{count} جيجابايت متوفرة",
+  "@gbFree": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "usedByYoutube": "مستخدم بواسطة YouTube",
+  "freeSpace": "المساحة الحرة",
+  "videoEncrypted": "فيديو • مشفر",
+  "pause": "إيقاف مؤقت",
+  "resume": "استئناف",
+  "delete": "حذف",
+  "useDeviceTheme": "استخدام ثيم الجهاز",
+  "lightTheme": "الثيم الفاتح",
+  "darkTheme": "الثيم الغامق"
+}

@@ -404,17 +404,33 @@ class _ShortsActionBar extends StatelessWidget {
         SizedBox(height: 16.h),
         _ActionItem(icon: FontAwesomeIcons.retweet, label: 'Remix'),
         SizedBox(height: 24.h),
-        Container(
-          width: 40.w,
-          height: 40.w,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8.r),
-            image: DecorationImage(
-              image: CachedNetworkImageProvider(
-                'https://ui-avatars.com/api/?name=${Uri.encodeComponent(shortData.channelName)}&background=random&format=png',
-              ),
-              fit: BoxFit.cover,
+        CachedNetworkImage(
+          imageUrl:
+              'https://ui-avatars.com/api/?name=${Uri.encodeComponent(shortData.channelName)}&background=random&format=png',
+          imageBuilder: (context, imageProvider) => Container(
+            width: 40.w,
+            height: 40.w,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8.r),
+              image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
             ),
+          ),
+          placeholder: (context, url) => Container(
+            width: 40.w,
+            height: 40.w,
+            decoration: BoxDecoration(
+              color: Colors.white24,
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            width: 40.w,
+            height: 40.w,
+            decoration: BoxDecoration(
+              color: Colors.white24,
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Icon(Icons.person, color: Colors.white, size: 24.sp),
           ),
         ),
       ],
@@ -459,10 +475,17 @@ class _ShortsInfoOverlay extends StatelessWidget {
       children: [
         Row(
           children: [
-            CircleAvatar(
-              radius: 18.r,
-              backgroundImage: CachedNetworkImageProvider(
-                'https://ui-avatars.com/api/?name=${Uri.encodeComponent(shortData.channelName)}&background=random&format=png',
+            CachedNetworkImage(
+              imageUrl:
+                  'https://ui-avatars.com/api/?name=${Uri.encodeComponent(shortData.channelName)}&background=random&format=png',
+              imageBuilder: (context, imageProvider) =>
+                  CircleAvatar(radius: 18.r, backgroundImage: imageProvider),
+              placeholder: (context, url) =>
+                  CircleAvatar(radius: 18.r, backgroundColor: Colors.white24),
+              errorWidget: (context, url, error) => CircleAvatar(
+                radius: 18.r,
+                backgroundColor: Colors.white24,
+                child: Icon(Icons.person, size: 18.sp, color: Colors.white),
               ),
             ),
             SizedBox(width: 8.w),

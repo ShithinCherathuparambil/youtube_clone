@@ -166,8 +166,18 @@ class _LibraryPageState extends State<LibraryPage> {
               height: 50.w,
               fit: BoxFit.cover,
               errorWidget: (context, url, error) => Container(
-                color: Colors.grey[200],
-                child: const Icon(Icons.playlist_play),
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: Center(
+                  child: Icon(
+                    playlist.title.contains('Movies')
+                        ? FontAwesomeIcons.film
+                        : FontAwesomeIcons.play,
+                    size: 20.sp,
+                    color: Theme.of(
+                      context,
+                    ).iconTheme.color?.withValues(alpha: 0.5),
+                  ),
+                ),
               ),
             ),
           ),

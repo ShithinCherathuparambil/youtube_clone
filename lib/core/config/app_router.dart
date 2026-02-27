@@ -13,6 +13,8 @@ import '../../presentation/pages/auth_page.dart';
 import '../../presentation/pages/main_navigation_page.dart';
 import '../../presentation/pages/search_page.dart';
 import '../../presentation/pages/channel_profile_page.dart';
+import '../../presentation/pages/settings_page.dart';
+import '../../presentation/pages/edit_profile_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
@@ -114,6 +116,23 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
       ],
+    ),
+    GoRoute(
+      path: SettingsPage.route,
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const SettingsPage(),
+    ),
+    GoRoute(
+      path: EditProfilePage.route,
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final args = state.extra as Map<String, dynamic>;
+        return EditProfilePage(
+          currentName: args['name'],
+          currentHandle: args['handle'],
+          currentImagePath: args['imagePath'],
+        );
+      },
     ),
     GoRoute(
       path: WatchPage.route,

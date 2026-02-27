@@ -1,0 +1,63 @@
+{
+  "@@locale": "ta",
+  "appTitle": "யூடியூப் குளோன்",
+  "home": "முகப்பு",
+  "shorts": "ஷார்ட்ஸ்",
+  "subscriptions": "சந்தாக்கள்",
+  "library": "நீங்க",
+  "settings": "அமைப்புகள்",
+  "appearance": "தோற்றம்",
+  "language": "மொழி",
+  "signOut": "வெளியேறு",
+  "editProfile": "சுயவிவரத்தைத் திருத்து",
+  "name": "பெயர்",
+  "handle": "பெயர்",
+  "save": "சேமி",
+  "cancel": "ரத்துசெய்",
+  "history": "வரலாறு",
+  "playlists": "பிளேலிஸ்ட்கள்",
+  "viewAll": "அனைத்தையும் பார்",
+  "yourVideos": "உங்கள் வீடியோக்கள்",
+  "downloads": "பதிவிறக்கங்கள்",
+  "getPremium": "யூடியூப் பிரீமியம் பெறுங்கள்",
+  "timeWatched": "பார்த்த நேரம்",
+  "helpFeedback": "உதவி & கருத்து",
+  "search": "தேடு",
+  "create": "உருவாக்கு",
+  "createShort": "ஷார்ட் உருவாக்கு",
+  "uploadVideo": "வீடியோவைப் பதிவேற்று",
+  "goLive": "நேரலை செல்",
+  "createPost": "ஒரு இடுகையை உருவாக்கு",
+  "switchAccount": "கணக்கை மாற்று",
+  "googleAccount": "கூகுள் கணக்கு",
+  "incognito": "மறைநிலை பயன்முறையை இயக்கு",
+  "deleteDownloads": "பதிவிறக்கங்களை நீக்கு",
+  "deleteSelectedVideos": "{count} தேர்ந்தெடுக்கப்பட்ட வீடியோக்களை நீக்கவா?",
+  "@deleteSelectedVideos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noDownloadsYet": "பதிவிறக்கங்கள் எதுவும் இல்லை",
+  "videosAppearHere": "நீங்கள் பதிவிறக்கும் வீடியோக்கள் இங்கே தோன்றும்",
+  "availableStorage": "கிடைக்கக்கூடிய சேமிப்பு",
+  "gbFree": "{count} GB காலியாக உள்ளது",
+  "@gbFree": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "usedByYoutube": "YouTube ஆல் பயன்படுத்தப்படுகிறது",
+  "freeSpace": "வெற்று இடம்",
+  "videoEncrypted": "வீடியோ • குறியாக்கம் செய்யப்பட்டது",
+  "pause": "நிறுத்து",
+  "resume": "தொடர்",
+  "delete": "நீக்கு",
+  "useDeviceTheme": "சாதன தீம் பயன்படுத்தவும்",
+  "lightTheme": "லைட் தீம்",
+  "darkTheme": "டார்க் தீம்"
+}

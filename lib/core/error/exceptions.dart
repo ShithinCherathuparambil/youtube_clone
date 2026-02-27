@@ -21,3 +21,11 @@ class EncryptionException implements Exception {
   @override
   String toString() => 'EncryptionException: $message';
 }
+
+class ConnectionException implements Exception {
+  ConnectionException([this.message = 'No internet connection']);
+  final String message;
+
+  @override
+  String toString() => 'ConnectionException: $message';
+}

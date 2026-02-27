@@ -25,3 +25,7 @@ class EncryptionFailure extends Failure {
 class ValidationFailure extends Failure {
   const ValidationFailure(super.message);
 }
+
+class ConnectionFailure extends Failure {
+  const ConnectionFailure([super.message = 'No internet connection']);
+}

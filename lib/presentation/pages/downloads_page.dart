@@ -11,6 +11,7 @@ import '../bloc/download/download_manager_cubit.dart';
 import '../bloc/download/download_manager_state.dart';
 
 import 'package:go_router/go_router.dart';
+import 'package:youtube_clone/l10n/app_localizations.dart';
 import '../../domain/entities/storage_info.dart';
 import 'watch_page.dart';
 
@@ -45,15 +46,16 @@ class _DownloadsPageState extends State<DownloadsPage> {
   }
 
   void _deleteSelected() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Downloads'),
-        content: Text('Delete ${_selectedItems.length} selected videos?'),
+        title: Text(l10n.deleteDownloads),
+        content: Text(l10n.deleteSelectedVideos(_selectedItems.length)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -63,7 +65,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
               Navigator.pop(context);
               _toggleSelectionMode();
             },
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -79,6 +81,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<DownloadManagerCubit, DownloadManagerState>(
       builder: (context, state) {
         if (state.isLoading && state.downloads.isEmpty) {
@@ -134,7 +137,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                         color: Theme.of(context).colorScheme.onError,
                       ),
                       label: Text(
-                        'Delete (${_selectedItems.length})',
+                        '${l10n.delete} (${_selectedItems.length})',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onError,
                         ),
@@ -154,12 +157,13 @@ class _DownloadsPageState extends State<DownloadsPage> {
   }
 
   PreferredSizeWidget _buildAppBar(DownloadManagerState state) {
+    final l10n = AppLocalizations.of(context)!;
     return AppBar(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       foregroundColor: Theme.of(context).iconTheme.color,
       elevation: 0,
       title: Text(
-        'Downloads',
+        l10n.downloads,
         style: TextStyle(
           fontSize: 20.sp,
           fontWeight: FontWeight.bold,
@@ -189,6 +193,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -198,11 +203,11 @@ class _DownloadsPageState extends State<DownloadsPage> {
             size: 64.sp,
             color: Theme.of(
               context,
-            ).colorScheme.onSurfaceVariant.withOpacity(0.3),
+            ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
           ),
           SizedBox(height: 16.h),
           Text(
-            'No downloads yet',
+            l10n.noDownloadsYet,
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
@@ -211,7 +216,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
           ),
           SizedBox(height: 8.h),
           Text(
-            'Videos you download will appear here',
+            l10n.videosAppearHere,
             style: TextStyle(
               fontSize: 14.sp,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -223,11 +228,12 @@ class _DownloadsPageState extends State<DownloadsPage> {
   }
 
   Widget _buildStorageIndicator(StorageInfo? info) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       color: Theme.of(
         context,
-      ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+      ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -235,7 +241,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Available Storage',
+                l10n.availableStorage,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14.sp,
@@ -243,7 +249,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                 ),
               ),
               Text(
-                '${info?.freeSpaceGB.toStringAsFixed(1) ?? '0.0'} GB Free',
+                l10n.gbFree(info?.freeSpaceGB.toStringAsFixed(1) ?? '0.0'),
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -261,7 +267,9 @@ class _DownloadsPageState extends State<DownloadsPage> {
               backgroundColor: Theme.of(
                 context,
               ).colorScheme.surfaceContainerHighest,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.3),
               minHeight: 8.h,
             ),
           ),
@@ -278,7 +286,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
               ),
               SizedBox(width: 6.w),
               Text(
-                'Used by YouTube',
+                l10n.usedByYoutube,
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -295,7 +303,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
               ),
               SizedBox(width: 6.w),
               Text(
-                'Free Space',
+                l10n.freeSpace,
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -309,6 +317,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
   }
 
   Widget _buildDownloadGridItem({required DownloadItem item}) {
+    final l10n = AppLocalizations.of(context)!;
     final id = item.videoId;
     final title = item.title;
     final isSelected = _selectedItems.contains(id);
@@ -392,7 +401,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                         decoration: BoxDecoration(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.8),
+                          ).colorScheme.onSurface.withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                         child: Text(
@@ -471,17 +480,17 @@ class _DownloadsPageState extends State<DownloadsPage> {
                                 }
                               },
                               itemBuilder: (context) => [
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'pause',
-                                  child: Text('Pause'),
+                                  child: Text(l10n.pause),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'resume',
-                                  child: Text('Resume'),
+                                  child: Text(l10n.resume),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'cancel',
-                                  child: Text('Cancel'),
+                                  child: Text(l10n.cancel),
                                 ),
                               ],
                             )
@@ -500,7 +509,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                       SizedBox(height: 4.h),
                       Text(
                         status == DownloadStatus.completed
-                            ? 'Video • Encrypted'
+                            ? l10n.videoEncrypted
                             : 'Status: ${status.name}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -550,7 +559,9 @@ class _DownloadsPageState extends State<DownloadsPage> {
                   shape: BoxShape.circle,
                   color: isSelected
                       ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                      : Theme.of(
+                          context,
+                        ).colorScheme.surface.withValues(alpha: 0.8),
                   border: Border.all(
                     color: isSelected
                         ? Theme.of(context).colorScheme.primary

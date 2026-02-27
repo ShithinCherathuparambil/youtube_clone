@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/profile/profile_cubit.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:youtube_clone/l10n/app_localizations.dart';
 import '../../core/constants/youtube_icons.dart';
 
 class MainNavigationPage extends StatelessWidget {
@@ -50,14 +54,22 @@ class _YoutubeBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = currentIndex == 1;
-    final bgColor = isDark
+    final l10n = AppLocalizations.of(context)!;
+    final isAppDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Support user request: if light theme is selected, use light colors even on Shorts.
+    // If dark theme is selected, use dark colors.
+    // However, usually Shorts stays dark. Let's make it follow the app theme as requested.
+    final useDarkTheme =
+        isAppDark; // Removed '|| isShorts' to honor light theme choice
+
+    final bgColor = useDarkTheme
         ? Colors.black
         : Theme.of(context).scaffoldBackgroundColor;
-    final itemColor = isDark
+    final itemColor = useDarkTheme
         ? Colors.white
         : Theme.of(context).iconTheme.color!;
-    final borderColor = isDark
+    final borderColor = useDarkTheme
         ? Colors.grey[800]!
         : Theme.of(context).dividerColor;
 
@@ -78,8 +90,8 @@ class _YoutubeBottomNavBar extends StatelessWidget {
                 currentIndex: currentIndex,
                 activeIcon: Icons.home,
                 inactiveIcon: Icons.home_outlined,
-                label: 'Home',
-                isDark: isDark,
+                label: l10n.home,
+                isDark: useDarkTheme,
                 onTap: onTap,
               ),
               _NavItem(
@@ -87,8 +99,8 @@ class _YoutubeBottomNavBar extends StatelessWidget {
                 currentIndex: currentIndex,
                 activeSvg: YoutubeIcons.shortsFilled,
                 inactiveSvg: YoutubeIcons.shortsOutline,
-                label: 'Shorts',
-                isDark: isDark,
+                label: l10n.shorts,
+                isDark: useDarkTheme,
                 onTap: onTap,
               ),
               Expanded(
@@ -116,19 +128,28 @@ class _YoutubeBottomNavBar extends StatelessWidget {
                 currentIndex: currentIndex,
                 activeIcon: Icons.subscriptions,
                 inactiveIcon: Icons.subscriptions_outlined,
-                label: 'Subscriptions',
-                isDark: isDark,
+                label: l10n.subscriptions,
+                isDark: useDarkTheme,
                 onTap: onTap,
               ),
-              _NavItem(
-                index: 4,
-                currentIndex: currentIndex,
-                activeIcon: FontAwesomeIcons.folder,
-                inactiveIcon: FontAwesomeIcons.folder,
-                avatarUrl: 'https://picsum.photos/id/1027/100/100',
-                label: 'You',
-                isDark: isDark,
-                onTap: onTap,
+              BlocBuilder<ProfileCubit, ProfileState>(
+                builder: (context, state) {
+                  String? imagePath;
+                  if (state is ProfileLoaded) {
+                    imagePath = state.profileImagePath;
+                  }
+                  return _NavItem(
+                    index: 4,
+                    currentIndex: currentIndex,
+                    activeIcon: FontAwesomeIcons.folder,
+                    inactiveIcon: FontAwesomeIcons.folder,
+                    avatarUrl: imagePath,
+                    isLocalImage: imagePath != null,
+                    label: l10n.library,
+                    isDark: useDarkTheme,
+                    onTap: onTap,
+                  );
+                },
               ),
             ],
           ),
@@ -147,6 +168,7 @@ class _NavItem extends StatelessWidget {
     this.activeSvg,
     this.inactiveSvg,
     this.avatarUrl,
+    this.isLocalImage = false,
     required this.label,
     required this.isDark,
     required this.onTap,
@@ -159,6 +181,7 @@ class _NavItem extends StatelessWidget {
   final String? activeSvg;
   final String? inactiveSvg;
   final String? avatarUrl;
+  final bool isLocalImage;
   final String label;
   final bool isDark;
   final ValueChanged<int> onTap;
@@ -186,7 +209,11 @@ class _NavItem extends StatelessWidget {
                 ),
                 child: CircleAvatar(
                   radius: 13.sp,
-                  backgroundImage: NetworkImage(avatarUrl!),
+                  backgroundImage: isLocalImage
+                      ? FileImage(File(avatarUrl!)) as ImageProvider
+                      : NetworkImage(
+                          avatarUrl ?? 'https://picsum.photos/id/1027/100/100',
+                        ),
                 ),
               )
             else if (activeSvg != null && inactiveSvg != null)

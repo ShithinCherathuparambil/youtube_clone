@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shimmer/shimmer.dart';
 
 class ShortCard extends StatelessWidget {
   const ShortCard({
@@ -37,7 +38,13 @@ class ShortCard extends StatelessWidget {
                 ),
                 errorWidget: (context, url, error) => Container(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: const Center(child: Icon(Icons.error)),
+                  child: Center(
+                    child: Icon(
+                      FontAwesomeIcons.youtube,
+                      color: Colors.red.withValues(alpha: 0.5),
+                      size: 40.sp,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -86,6 +93,29 @@ class ShortCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class ShortCardShimmer extends StatelessWidget {
+  const ShortCardShimmer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Padding(
+        padding: EdgeInsets.only(right: 8.w),
+        child: Container(
+          width: 160.w,
+          height: 280.h,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12.r),
+          ),
         ),
       ),
     );

@@ -1,0 +1,63 @@
+{
+  "@@locale": "ml",
+  "appTitle": "യൂട്യൂബ് ക്ലോൺ",
+  "home": "ഹോം",
+  "shorts": "ഷോർട്ട്സ്",
+  "subscriptions": "സബ്സ്ക്രിപ്ഷനുകൾ",
+  "library": "നിങ്ങൾ",
+  "settings": "ക്രമീകരണങ്ങൾ",
+  "appearance": "കാഴ്ച",
+  "language": "ഭാഷ",
+  "signOut": "പുറത്തുകടക്കുക",
+  "editProfile": "പ്രൊഫൈൽ എഡിറ്റ് ചെയ്യുക",
+  "name": "പേര്",
+  "handle": "ഹാൻഡിൽ",
+  "save": "സേവ് ചെയ്യുക",
+  "cancel": "റദ്ദാക്കുക",
+  "history": "ചരിത്രം",
+  "playlists": "പ്ലേലിസ്റ്റുകൾ",
+  "viewAll": "എല്ലാം കാണുക",
+  "yourVideos": "നിങ്ങളുടെ വീഡിയോകൾ",
+  "downloads": "ഡൗൺലോഡുകൾ",
+  "getPremium": "യൂട്യൂബ് പ്രീമിയം നേടുക",
+  "timeWatched": "കണ്ട സമയം",
+  "helpFeedback": "സഹായവും ഫീഡ്‌ബാക്കും",
+  "search": "തിരയുക",
+  "create": "ഉണ്ടാക്കുക",
+  "createShort": "ഒരു ഷോർട്ട് ഉണ്ടാക്കുക",
+  "uploadVideo": "ഒരു വീഡിയോ അപ്‌ലോഡ് ചെയ്യുക",
+  "goLive": "ലൈവ് പോകുക",
+  "createPost": "ഒരു പോസ്റ്റ് സൃഷ്ടിക്കുക",
+  "switchAccount": "അക്കൗണ്ട് മാറ്റുക",
+  "googleAccount": "ഗൂഗിൾ അക്കൗണ്ട്",
+  "incognito": "ഇൻകോഗ്നിറ്റോ ഓൺ ചെയ്യുക",
+  "deleteDownloads": "ഡൗൺലോഡുകൾ നീക്കംചെയ്യുക",
+  "deleteSelectedVideos": "{count} തിരഞ്ഞെടുത്ത വീഡിയോകൾ ഇല്ലാതാക്കണോ?",
+  "@deleteSelectedVideos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noDownloadsYet": "ഡൗൺലോഡുകൾ ഒന്നുമില്ല",
+  "videosAppearHere": "നിങ്ങൾ ഡൗൺലോഡ് ചെയ്യുന്ന വീഡിയോകൾ ഇവിടെ കാണാം",
+  "availableStorage": "ലഭ്യമായ സ്റ്റോറേജ്",
+  "gbFree": "{count} GB ബാക്കിയുണ്ട്",
+  "@gbFree": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "usedByYoutube": "YouTube ഉപയോഗിക്കുന്നത്",
+  "freeSpace": "ബാക്കിയുള്ള സ്ഥലം",
+  "videoEncrypted": "വീഡിയോ • എൻക്രിപ്റ്റ് ചെയ്തത്",
+  "pause": "നിർത്തുക",
+  "resume": "തുടരുക",
+  "delete": "നീക്കംചെയ്യുക",
+  "useDeviceTheme": "ഉപകരണ തീം ഉപയോഗിക്കുക",
+  "lightTheme": "ലൈറ്റ് തീം",
+  "darkTheme": "ഡാർക്ക് തീം"
+}

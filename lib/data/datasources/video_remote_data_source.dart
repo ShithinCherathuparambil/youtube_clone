@@ -217,7 +217,7 @@ class VideoRemoteDataSourceImpl implements VideoRemoteDataSource {
           'type': 'video',
           'maxResults': 15,
           'key': YouTubeApiKeys.apiKey,
-          if (pageToken != null) 'pageToken': pageToken,
+          'pageToken': ?pageToken,
         },
       );
 
