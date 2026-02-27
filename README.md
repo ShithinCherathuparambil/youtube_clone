@@ -4,16 +4,6 @@ A feature-rich YouTube clone built with **Flutter** and **Clean Architecture**, 
 
 ---
 
-## 📱 APK Download
-
-> Pre-built release APK is available in the root of this repository.
-
-```
-youtube_clone_release.apk  (63.9 MB)
-```
-
----
-
 ## 🛠️ Flutter Version
 
 | Tool        | Version   |
