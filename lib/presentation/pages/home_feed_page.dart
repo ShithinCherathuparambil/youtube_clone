@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/youtube_icons.dart';
 import '../../core/error/failures.dart';
@@ -424,6 +425,12 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
                 title: video.title,
                 views: '${(video.views / 1000).toStringAsFixed(1)}K views',
                 thumbUrl: video.thumbnailUrl,
+                onTap: () {
+                  context.push(
+                    '/shorts',
+                    extra: {'initialVideos': _shorts, 'initialIndex': index},
+                  );
+                },
               );
             },
             separatorBuilder: (context, index) => SizedBox(width: 12.w),
