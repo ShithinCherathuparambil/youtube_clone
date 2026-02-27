@@ -252,14 +252,18 @@ class _DownloadsPageState extends State<DownloadsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                l10n.availableStorage,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.sp,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+              Flexible(
+                child: Text(
+                  l10n.availableStorage,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 l10n.gbFree(info?.freeSpaceGB.toStringAsFixed(1) ?? '0.0'),
                 style: TextStyle(
@@ -297,11 +301,14 @@ class _DownloadsPageState extends State<DownloadsPage> {
                 ),
               ),
               SizedBox(width: 6.w),
-              Text(
-                l10n.usedByYoutube,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+              Flexible(
+                child: Text(
+                  l10n.usedByYoutube,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               SizedBox(width: 16.w),
@@ -314,11 +321,14 @@ class _DownloadsPageState extends State<DownloadsPage> {
                 ),
               ),
               SizedBox(width: 6.w),
-              Text(
-                l10n.freeSpace,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+              Flexible(
+                child: Text(
+                  l10n.freeSpace,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

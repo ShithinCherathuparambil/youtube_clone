@@ -58,6 +58,7 @@ class DownloadItem extends Equatable {
     outputPath,
     status,
     progress,
+    taskId,
     errorMessage,
     videoHash,
     isEncrypted,
