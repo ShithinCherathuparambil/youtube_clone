@@ -81,7 +81,7 @@ A feature-rich YouTube clone built with **Flutter** and **Clean Architecture**, 
 
 ### 1. Clone
 ```bash
-git clone <your-repo-url>
+git clone <https://github.com/ShithinCherathuparambil/youtube_clone.git>
 cd youtube_clone
 ```
 
