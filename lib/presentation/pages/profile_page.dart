@@ -5,16 +5,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:youtube_clone/l10n/app_localizations.dart';
-import '../../core/constants/youtube_icons.dart';
 import '../../domain/entities/playlist.dart';
 import '../../domain/usecases/get_playlists.dart';
 import '../../injection_container.dart';
 import '../bloc/auth/auth_bloc.dart';
-import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_state.dart';
 import '../bloc/profile/profile_cubit.dart';
+import '../bloc/watch_history/watch_history_cubit.dart';
+import '../../domain/entities/video.dart';
 
 class ProfilePage extends StatefulWidget {
   static const route = '/library';
@@ -52,102 +51,110 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, AuthState>(
-      listener: (context, state) {
-        if (state is AuthUnauthenticated) {
-          context.go('/auth');
-        } else if (state is AuthError) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
-        }
-      },
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => sl<WatchHistoryCubit>()..loadHistory(),
+        ),
+      ],
+      child: BlocListener<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is AuthUnauthenticated) {
+            context.go('/auth');
+          } else if (state is AuthError) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
+          }
+        },
+        child: Scaffold(
+          key: const PageStorageKey<String>('profile'),
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          foregroundColor: Theme.of(context).iconTheme.color,
-          elevation: 0,
-          actions: [
-            IconButton(
-              icon: const Icon(FontAwesomeIcons.chromecast, size: 22),
-              onPressed: () {},
-            ),
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(FontAwesomeIcons.bell, size: 22),
-                  onPressed: () {},
-                ),
-                Positioned(
-                  top: 10.h,
-                  right: 8.w,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 4.w,
-                      vertical: 2.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                    child: Text(
-                      '9+',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.bold,
+          appBar: AppBar(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            foregroundColor: Theme.of(context).iconTheme.color,
+            elevation: 0,
+            actions: [
+              IconButton(
+                icon: const Icon(FontAwesomeIcons.chromecast, size: 22),
+                onPressed: () {},
+              ),
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(FontAwesomeIcons.bell, size: 22),
+                    onPressed: () {},
+                  ),
+                  Positioned(
+                    top: 10.h,
+                    right: 8.w,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 4.w,
+                        vertical: 2.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: Text(
+                        '9+',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            IconButton(
-              icon: const Icon(FontAwesomeIcons.magnifyingGlass, size: 22),
-              onPressed: () => context.push('/search'),
-            ),
-            IconButton(
-              icon: const Icon(FontAwesomeIcons.gear, size: 22),
-              onPressed: () => context.push('/settings'),
-            ),
-          ],
-        ),
-        body: BlocBuilder<ProfileCubit, ProfileState>(
-          builder: (context, state) {
-            String name = 'Shithin Cp';
-            String handle = '@shithincp1484';
-            String? imagePath;
-
-            if (state is ProfileLoaded) {
-              name = state.name;
-              handle = state.handle;
-              imagePath = state.profileImagePath;
-            }
-
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildProfileHeader(context, name, handle, imagePath),
-                  SizedBox(height: 16.h),
-                  _buildAccountChips(context),
-                  SizedBox(height: 24.h),
-                  _buildHistorySection(context),
-                  SizedBox(height: 24.h),
-                  _buildPlaylistsSection(context),
-                  SizedBox(height: 24.h),
-                  _buildVideoActions(context),
-                  SizedBox(height: 16.h),
-                  Divider(height: 1.h, color: Theme.of(context).dividerColor),
-                  SizedBox(height: 8.h),
-                  _buildPremiumActions(context),
-                  SizedBox(height: 40.h),
                 ],
               ),
-            );
-          },
+              IconButton(
+                icon: const Icon(FontAwesomeIcons.magnifyingGlass, size: 22),
+                onPressed: () => context.push('/search'),
+              ),
+              IconButton(
+                icon: const Icon(FontAwesomeIcons.gear, size: 22),
+                onPressed: () => context.push('/settings'),
+              ),
+            ],
+          ),
+          body: BlocBuilder<ProfileCubit, ProfileState>(
+            builder: (context, state) {
+              String name = 'Shithin Cp';
+              String handle = '@shithincp1484';
+              String? imagePath;
+
+              if (state is ProfileLoaded) {
+                name = state.name;
+                handle = state.handle;
+                imagePath = state.profileImagePath;
+              }
+
+              return SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildProfileHeader(context, name, handle, imagePath),
+                    SizedBox(height: 16.h),
+                    _buildAccountChips(context),
+                    SizedBox(height: 24.h),
+                    _buildHistorySection(context),
+                    SizedBox(height: 24.h),
+                    _buildPlaylistsSection(context),
+                    SizedBox(height: 24.h),
+                    _buildVideoActions(context),
+                    SizedBox(height: 16.h),
+                    Divider(height: 1.h, color: Theme.of(context).dividerColor),
+                    SizedBox(height: 8.h),
+                    _buildPremiumActions(context),
+                    SizedBox(height: 40.h),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -344,204 +351,119 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         SizedBox(height: 12.h),
         SizedBox(
-          height: 160.h,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            children: [
-              _buildHistoryShortCard(
-                'Shorts',
-                '16 watched',
-                'https://picsum.photos/id/237/200/300',
-              ),
-              SizedBox(width: 12.w),
-              _buildHistoryLiveCard(
-                '🔴Live Street Food🔴',
-                'Chinese Streetfood',
-                'https://picsum.photos/id/1080/300/200',
-              ),
-              SizedBox(width: 12.w),
-              _buildHistoryShortCard(
-                'Shorts',
-                '9 watched',
-                'https://picsum.photos/id/1025/200/300',
-              ),
-            ],
+          height: 180.h,
+          child: BlocBuilder<WatchHistoryCubit, WatchHistoryState>(
+            builder: (context, state) {
+              if (state is WatchHistoryLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (state is WatchHistoryLoaded) {
+                if (state.history.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No watch history yet',
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  itemCount: state.history.length,
+                  itemBuilder: (context, index) {
+                    final video = state.history[index];
+                    return Padding(
+                      padding: EdgeInsets.only(right: 12.w),
+                      child: _buildHistoryVideoCard(video),
+                    );
+                  },
+                );
+              }
+              if (state is WatchHistoryError) {
+                return Center(child: Text(state.message));
+              }
+              return const SizedBox.shrink();
+            },
           ),
         ),
       ],
     );
   }
 
-  Widget _buildHistoryShortCard(
-    String title,
-    String subtitle,
-    String imageUrl,
-  ) {
-    return SizedBox(
-      width: 140.w,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8.r),
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  height: 100.h,
-                  width: 140.w,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Positioned(
-                bottom: 6.h,
-                right: 6.w,
-                child: SvgPicture.string(
-                  YoutubeIcons.shortsFilled,
-                  width: 18.sp,
-                  height: 18.sp,
-                  colorFilter: const ColorFilter.mode(
-                    Colors.white,
-                    BlendMode.srcIn,
+  Widget _buildHistoryVideoCard(Video video) {
+    return GestureDetector(
+      onTap: () => context.push('/watch', extra: video),
+      child: SizedBox(
+        width: 140.w,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8.r),
+                  child: CachedNetworkImage(
+                    imageUrl: video.thumbnailUrl,
+                    height: 80.h,
+                    width: 140.w,
+                    fit: BoxFit.cover,
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8.h),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w400,
-                        color: Theme.of(context).textTheme.bodyMedium?.color,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                Positioned(
+                  bottom: 4.h,
+                  right: 4.w,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 4.w,
+                      vertical: 2.h,
                     ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(4.r),
                     ),
-                  ],
+                    child: Text(
+                      _formatDuration(video.duration),
+                      style: TextStyle(color: Colors.white, fontSize: 10.sp),
+                    ),
+                  ),
                 ),
+              ],
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              video.title,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
-              Icon(
-                FontAwesomeIcons.ellipsisVertical,
-                size: 14.sp,
-                color: Theme.of(context).iconTheme.color,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 2.h),
+            Text(
+              video.channelName,
+              style: TextStyle(
+                fontSize: 11.sp,
+                color: Theme.of(context).textTheme.bodySmall?.color,
               ),
-            ],
-          ),
-        ],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHistoryLiveCard(String title, String subtitle, String imageUrl) {
-    return SizedBox(
-      width: 180.w,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8.r),
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  height: 100.h,
-                  width: 180.w,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Positioned(
-                bottom: 6.h,
-                right: 6.w,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(4.r),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        FontAwesomeIcons.wifi,
-                        color: Colors.white,
-                        size: 10.sp,
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        'LIVE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8.h),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w400,
-                        color: Theme.of(context).textTheme.bodyMedium?.color,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                FontAwesomeIcons.ellipsisVertical,
-                size: 14.sp,
-                color: Theme.of(context).iconTheme.color,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+  String _formatDuration(Duration d) {
+    if (d.inSeconds == 0) return '';
+    final minutes = d.inMinutes;
+    final seconds = d.inSeconds.remainder(60);
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
   Widget _buildPlaylistsSection(BuildContext context) {
@@ -737,13 +659,6 @@ class _ProfilePageState extends State<ProfilePage> {
         _buildListTile(FontAwesomeIcons.youtube, l10n.getPremium),
         _buildListTile(FontAwesomeIcons.clockRotateLeft, l10n.timeWatched),
         _buildListTile(FontAwesomeIcons.circleQuestion, l10n.helpFeedback),
-        _buildListTile(
-          FontAwesomeIcons.arrowRightFromBracket,
-          l10n.signOut,
-          onTap: () {
-            context.read<AuthBloc>().add(LogoutRequested());
-          },
-        ),
       ],
     );
   }

@@ -8,6 +8,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:youtube_clone/l10n/app_localizations.dart';
 import '../../core/constants/youtube_icons.dart';
+import '../bloc/download/download_manager_cubit.dart';
+import '../bloc/download/download_manager_state.dart';
+import '../../domain/entities/download_item.dart';
 
 class MainNavigationPage extends StatelessWidget {
   const MainNavigationPage({super.key, required this.navigationShell});
@@ -55,195 +58,165 @@ class _YoutubeBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isAppDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Support user request: if light theme is selected, use light colors even on Shorts.
-    // If dark theme is selected, use dark colors.
-    // However, usually Shorts stays dark. Let's make it follow the app theme as requested.
-    final useDarkTheme =
-        isAppDark; // Removed '|| isShorts' to honor light theme choice
-
-    final bgColor = useDarkTheme
-        ? Colors.black
-        : Theme.of(context).scaffoldBackgroundColor;
-    final itemColor = useDarkTheme
-        ? Colors.white
-        : Theme.of(context).iconTheme.color!;
-    final borderColor = useDarkTheme
-        ? Colors.grey[800]!
-        : Theme.of(context).dividerColor;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      color: bgColor,
-      child: SafeArea(
-        top: false,
-        child: Container(
-          height: 56.h,
-          padding: EdgeInsets.symmetric(horizontal: 4.w),
-          decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: borderColor, width: 0.5)),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: isDark ? Colors.grey[800]! : theme.dividerColor,
+            width: 0.5,
           ),
-          child: Row(
-            children: [
-              _NavItem(
-                index: 0,
-                currentIndex: currentIndex,
-                activeIcon: Icons.home,
-                inactiveIcon: Icons.home_outlined,
+        ),
+      ),
+      child: BlocBuilder<DownloadManagerCubit, DownloadManagerState>(
+        builder: (context, downloadState) {
+          final activeDownloads = downloadState.downloads
+              .where(
+                (d) =>
+                    d.status == DownloadStatus.downloading ||
+                    d.status == DownloadStatus.encrypting,
+              )
+              .length;
+
+          return BottomNavigationBar(
+            currentIndex: currentIndex > 2
+                ? currentIndex
+                : (currentIndex < 2
+                      ? currentIndex
+                      : 0), // Adjust for the center "+" button which isn't a real nav item in the bar
+            // Actually, the currentIndex from navigationShell includes the "add" branch if defined.
+            // Let's look at the Row implementation and reproduce it.
+            // The shell has branches: 0:Home, 1:Shorts, 2:Add, 3:Subs, 4:Library
+
+            // Re-evaluating: Material BottomNavigationBar doesn't easily support a custom center button in the middle of items.
+            // However, the task was to "Refactor to use BottomNavigationBar widget".
+            // If I use BottomNavigationBar, I might have to handle the "Add" button differently or use a custom Row but call it BottomNavigationBar?
+            // No, usually BottomNavigationBar is preferred for accessibility.
+            // I'll use a custom Row but ensure it follows the standards, OR I'll use BottomNavigationBar and accept the "Add" as an item.
+            // YouTube actually has "Add" as a center item.
+
+            // Let's stick to the Row-based custom implementation but make it look and feel like a standard one with better state management.
+            // Wait, I promised "Refactor to use BottomNavigationBar widget".
+            // I'll use a BottomNavigationBar with 5 items, and the middle one will be "Create".
+            type: BottomNavigationBarType.fixed,
+            selectedFontSize: 11.sp,
+            unselectedFontSize: 11.sp,
+            selectedItemColor: isDark ? Colors.white : theme.iconTheme.color,
+            unselectedItemColor: isDark ? Colors.white : theme.iconTheme.color,
+            backgroundColor: isDark
+                ? Colors.black
+                : theme.scaffoldBackgroundColor,
+            onTap: onTap,
+            items: [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined, size: 26.sp),
+                activeIcon: Icon(Icons.home, size: 26.sp),
                 label: l10n.home,
-                isDark: useDarkTheme,
-                onTap: onTap,
               ),
-              _NavItem(
-                index: 1,
-                currentIndex: currentIndex,
-                activeSvg: YoutubeIcons.shortsFilled,
-                inactiveSvg: YoutubeIcons.shortsOutline,
-                label: l10n.shorts,
-                isDark: useDarkTheme,
-                onTap: onTap,
-              ),
-              Expanded(
-                child: InkWell(
-                  onTap: () => onTap(2),
-                  child: Center(
-                    child: Container(
-                      width: 40.w,
-                      height: 40.w,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: itemColor, width: 1.2),
-                      ),
-                      child: Icon(
-                        FontAwesomeIcons.plus,
-                        size: 24.sp,
-                        color: itemColor,
-                      ),
-                    ),
+              BottomNavigationBarItem(
+                icon: SvgPicture.string(
+                  YoutubeIcons.shortsOutline,
+                  height: 24.sp,
+                  width: 24.sp,
+                  colorFilter: ColorFilter.mode(
+                    isDark ? Colors.white : theme.iconTheme.color!,
+                    BlendMode.srcIn,
                   ),
                 ),
+                activeIcon: SvgPicture.string(
+                  YoutubeIcons.shortsFilled,
+                  height: 24.sp,
+                  width: 24.sp,
+                  colorFilter: ColorFilter.mode(
+                    isDark ? Colors.white : theme.iconTheme.color!,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                label: l10n.shorts,
               ),
-              _NavItem(
-                index: 3,
-                currentIndex: currentIndex,
-                activeIcon: Icons.subscriptions,
-                inactiveIcon: Icons.subscriptions_outlined,
+              BottomNavigationBarItem(
+                icon: Container(
+                  width: 40.w,
+                  height: 40.w,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark ? Colors.white : theme.iconTheme.color!,
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Icon(
+                    FontAwesomeIcons.plus,
+                    size: 22.sp,
+                    color: isDark ? Colors.white : theme.iconTheme.color,
+                  ),
+                ),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.subscriptions_outlined, size: 24.sp),
+                activeIcon: Icon(Icons.subscriptions, size: 24.sp),
                 label: l10n.subscriptions,
-                isDark: useDarkTheme,
-                onTap: onTap,
               ),
-              BlocBuilder<ProfileCubit, ProfileState>(
-                builder: (context, state) {
-                  String? imagePath;
-                  if (state is ProfileLoaded) {
-                    imagePath = state.profileImagePath;
-                  }
-                  return _NavItem(
-                    index: 4,
-                    currentIndex: currentIndex,
-                    activeIcon: FontAwesomeIcons.folder,
-                    inactiveIcon: FontAwesomeIcons.folder,
-                    avatarUrl: imagePath,
-                    isLocalImage: imagePath != null,
-                    label: l10n.library,
-                    isDark: useDarkTheme,
-                    onTap: onTap,
-                  );
-                },
+              BottomNavigationBarItem(
+                icon: Badge.count(
+                  count: activeDownloads,
+                  isLabelVisible: activeDownloads > 0,
+                  child: BlocBuilder<ProfileCubit, ProfileState>(
+                    builder: (context, profileState) {
+                      String? imagePath;
+                      if (profileState is ProfileLoaded) {
+                        imagePath = profileState.profileImagePath;
+                      }
+                      if (imagePath != null) {
+                        return CircleAvatar(
+                          radius: 13.r,
+                          backgroundImage: FileImage(File(imagePath)),
+                        );
+                      }
+                      return Icon(FontAwesomeIcons.folder, size: 22.sp);
+                    },
+                  ),
+                ),
+                activeIcon: BlocBuilder<ProfileCubit, ProfileState>(
+                  builder: (context, profileState) {
+                    String? imagePath;
+                    if (profileState is ProfileLoaded) {
+                      imagePath = profileState.profileImagePath;
+                    }
+                    if (imagePath != null) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white
+                                : theme.iconTheme.color!,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          radius: 11.5.r,
+                          backgroundImage: FileImage(File(imagePath)),
+                        ),
+                      );
+                    }
+                    return Icon(FontAwesomeIcons.folder, size: 22.sp);
+                  },
+                ),
+                label: l10n.library,
               ),
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 }
 
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.index,
-    required this.currentIndex,
-    this.activeIcon,
-    this.inactiveIcon,
-    this.activeSvg,
-    this.inactiveSvg,
-    this.avatarUrl,
-    this.isLocalImage = false,
-    required this.label,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  final int index;
-  final int currentIndex;
-  final IconData? activeIcon;
-  final IconData? inactiveIcon;
-  final String? activeSvg;
-  final String? inactiveSvg;
-  final String? avatarUrl;
-  final bool isLocalImage;
-  final String label;
-  final bool isDark;
-  final ValueChanged<int> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final selected = index == currentIndex;
-    final itemColor = isDark
-        ? Colors.white
-        : Theme.of(context).iconTheme.color!;
-
-    return Expanded(
-      child: InkWell(
-        onTap: () => onTap(index),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (avatarUrl != null)
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: selected
-                      ? Border.all(color: itemColor, width: 2)
-                      : null,
-                ),
-                child: CircleAvatar(
-                  radius: 13.sp,
-                  backgroundImage: isLocalImage
-                      ? FileImage(File(avatarUrl!)) as ImageProvider
-                      : NetworkImage(
-                          avatarUrl ?? 'https://picsum.photos/id/1027/100/100',
-                        ),
-                ),
-              )
-            else if (activeSvg != null && inactiveSvg != null)
-              SvgPicture.string(
-                selected ? activeSvg! : inactiveSvg!,
-                height: 24.sp,
-                width: 24.sp,
-                colorFilter: ColorFilter.mode(itemColor, BlendMode.srcIn),
-              )
-            else
-              Icon(
-                selected ? activeIcon : inactiveIcon,
-                size: 26.sp,
-                color: itemColor,
-              ),
-            SizedBox(height: 2.h),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10.sp,
-                color: itemColor,
-                fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// _NavItem removed in favor of BottomNavigationBarItem
 
 class _CreateBottomSheet extends StatelessWidget {
   const _CreateBottomSheet();

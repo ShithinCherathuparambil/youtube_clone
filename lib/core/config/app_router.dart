@@ -52,7 +52,10 @@ final GoRouter appRouter = GoRouter(
           key: state.pageKey,
           child: MainNavigationPage(navigationShell: navigationShell),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
+            return FadeTransition(
+              opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
+              child: child,
+            );
           },
         );
       },
@@ -74,7 +77,7 @@ final GoRouter appRouter = GoRouter(
               builder: (context, state) {
                 final args = state.extra as Map<String, dynamic>? ?? {};
                 return ShortsPage(
-                  initialVideos: args['initialVideos'] as List<Vido>?,
+                  initialVideos: args['initialVideos'] as List<Video>?,
                   initialIndex: args['initialIndex'] as int?,
                   nextPageToken: args['nextPageToken'] as String?,
                 );
@@ -138,31 +141,12 @@ final GoRouter appRouter = GoRouter(
       path: WatchPage.route,
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
-        final Map<String, dynamic> args =
-            state.extra as Map<String, dynamic>? ?? {};
-        final videoUrl =
-            args['videoUrl'] as String? ??
-            state.uri.queryParameters['videoUrl'] ??
-            '';
-        final title =
-            args['title'] as String? ??
-            state.uri.queryParameters['title'] ??
-            '';
-        final id =
-            args['id'] as String? ?? state.uri.queryParameters['id'] ?? '';
-        final channelName =
-            args['channelName'] as String? ??
-            state.uri.queryParameters['channelName'];
-        final channelId =
-            args['channelId'] as String? ??
-            state.uri.queryParameters['channelId'];
-        return WatchPage(
-          videoUrl: videoUrl,
-          title: title,
-          id: id,
-          channelName: channelName,
-          channelId: channelId,
-        );
+        final video = state.extra;
+        if (video == null || video is! Video) {
+          // Navigate back if somehow the route is hit without a video
+          return const Scaffold(body: Center(child: Text('Video not found.')));
+        }
+        return WatchPage(video: video);
       },
     ),
     GoRoute(
@@ -176,7 +160,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final args = state.extra as Map<String, dynamic>? ?? {};
         return ShortsPage(
-          initialVideos: args['initialVideos'] as List<Vido>?,
+          initialVideos: args['initialVideos'] as List<Video>?,
           initialIndex: args['initialIndex'] as int?,
           nextPageToken: args['nextPageToken'] as String?,
         );

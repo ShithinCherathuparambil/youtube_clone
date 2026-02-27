@@ -133,16 +133,27 @@ class DownloadRepositoryImpl implements DownloadRepository {
                 return;
               }
 
-              final bytes = await tempFile.readAsBytes();
-              final encryptedBytes = await _encryptionService.encryptBytes(
-                bytes,
+              // Update status to encrypting
+              currentItem = currentItem.copyWith(
+                status: DownloadStatus.encrypting,
               );
+              await _localDataSource.cacheDownload(currentItem);
 
               final outputDirectory = await _ensureOutputDirectory();
               final outputFile = File(
                 '${outputDirectory.path}/${item.videoId}.encvid',
               );
-              await outputFile.writeAsBytes(encryptedBytes, flush: true);
+
+              // Use the new streaming encryption
+              final videoHash = await _encryptionService.encryptFile(
+                inputFile: tempFile,
+                outputFile: outputFile,
+                videoId: item.videoId,
+                onProgress: (encryptionProgress) {
+                  // We can combine or switch progress if needed.
+                  // For now, let's just keep the status as encrypting.
+                },
+              );
 
               await tempFile.delete();
 
@@ -150,6 +161,8 @@ class DownloadRepositoryImpl implements DownloadRepository {
                 status: DownloadStatus.completed,
                 progress: 1.0,
                 outputPath: outputFile.path,
+                videoHash: videoHash,
+                isEncrypted: true,
               );
               await _localDataSource.cacheDownload(completed);
 
@@ -209,6 +222,9 @@ class DownloadRepositoryImpl implements DownloadRepository {
         await _backgroundDownloadService.remove(item.taskId!);
       }
 
+      // 4. Remove encryption key
+      await _encryptionService.removeVideoKey(videoId);
+
       return const Right(null);
     } catch (e) {
       return Left(CacheFailure('Failed to delete download: $e'));
@@ -221,13 +237,26 @@ class DownloadRepositoryImpl implements DownloadRepository {
     String encryptedPath,
   ) async {
     try {
+      final downloads = await _localDataSource.getDownloads();
+      final item = downloads.firstWhere((e) => e.videoId == videoId);
+
+      if (!item.isEncrypted || item.videoHash == null) {
+        // Handle legacy or non-encrypted files if they exist (though we forced encrypt in repo)
+        final file = File(encryptedPath);
+        if (await file.exists()) return Right(file);
+        return Left(
+          ServerFailure('File not found or missing encryption metadata'),
+        );
+      }
+
       final decryptedFile = await _encryptionService.decryptToTempFile(
-        videoId,
-        encryptedPath,
+        videoId: videoId,
+        encryptedPath: encryptedPath,
+        expectedHash: item.videoHash!,
       );
       return Right(decryptedFile);
     } catch (e) {
-      return Left(ServerFailure('Decryption failed: $e'));
+      return Left(ServerFailure('Decryption or Integrity check failed: $e'));
     }
   }
 

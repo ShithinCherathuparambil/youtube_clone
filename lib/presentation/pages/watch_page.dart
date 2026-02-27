@@ -18,23 +18,14 @@ import '../bloc/video_player/video_player_bloc.dart';
 import '../bloc/download/download_manager_cubit.dart';
 import '../bloc/download/download_manager_state.dart';
 import '../../domain/entities/download_item.dart';
+import '../../domain/entities/video.dart';
+import '../../domain/usecases/add_to_history.dart';
 
 class WatchPage extends StatefulWidget {
   static const route = '/watch';
-  const WatchPage({
-    super.key,
-    required this.videoUrl,
-    required this.title,
-    required this.id,
-    this.channelName,
-    this.channelId,
-  });
+  const WatchPage({super.key, required this.video});
 
-  final String videoUrl;
-  final String title;
-  final String id;
-  final String? channelName;
-  final String? channelId;
+  final Video video;
 
   @override
   State<WatchPage> createState() => _WatchPageState();
@@ -50,6 +41,9 @@ class _WatchPageState extends State<WatchPage> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+
+    // Add to watch history
+    sl<AddToHistory>()(widget.video);
   }
 
   @override
@@ -65,7 +59,7 @@ class _WatchPageState extends State<WatchPage> {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) =>
-          sl<VideoPlayerBloc>()..add(VideoInitialized(widget.videoUrl)),
+          sl<VideoPlayerBloc>()..add(VideoInitialized(widget.video.videoUrl)),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: OrientationBuilder(
@@ -73,39 +67,27 @@ class _WatchPageState extends State<WatchPage> {
             if (orientation == Orientation.landscape) {
               return Container(
                 color: Colors.black,
-                child: Center(
-                  child: _VideoPlayerSection(
-                    title: widget.title,
-                    id: widget.id,
-                  ),
-                ),
+                child: Center(child: _VideoPlayerSection(video: widget.video)),
               );
             }
             return SafeArea(
               bottom: false,
               child: Column(
                 children: [
-                  _VideoPlayerSection(title: widget.title, id: widget.id),
+                  _VideoPlayerSection(video: widget.video),
                   Expanded(
                     child: ListView(
                       padding: EdgeInsets.zero,
                       children: [
-                        _VideoInfoSection(title: widget.title),
-                        _ChannelInfoSection(
-                          channelName: widget.channelName,
-                          channelId: widget.channelId,
-                        ),
-                        _ActionButtonsSection(
-                          videoUrl: widget.videoUrl,
-                          videoId: widget.id,
-                          title: widget.title,
-                        ),
+                        _VideoInfoSection(video: widget.video),
+                        _ChannelInfoSection(video: widget.video),
+                        _ActionButtonsSection(video: widget.video),
                         const _DescriptionSection(),
                         Divider(
                           height: 1.h,
                           color: Theme.of(context).dividerColor,
                         ),
-                        _CommentsSection(videoId: widget.id),
+                        _CommentsSection(videoId: widget.video.id),
                         Divider(
                           height: 1.h,
                           color: Theme.of(context).dividerColor,
@@ -125,9 +107,8 @@ class _WatchPageState extends State<WatchPage> {
 }
 
 class _VideoPlayerSection extends StatelessWidget {
-  const _VideoPlayerSection({required this.title, required this.id});
-  final String title;
-  final String id;
+  const _VideoPlayerSection({required this.video});
+  final Video video;
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +116,7 @@ class _VideoPlayerSection extends StatelessWidget {
       builder: (context, state) {
         if (state.status == VideoPlayerStatus.loading) {
           return Hero(
-            tag: 'video_thumb_$id',
+            tag: 'video_thumb_${video.id}',
             child: Material(
               color: Colors.black,
               child: AspectRatio(
@@ -171,7 +152,7 @@ class _VideoPlayerSection extends StatelessWidget {
 
         final controller = state.controller!;
         return Hero(
-          tag: 'video_thumb_$id',
+          tag: 'video_thumb_${video.id}',
           child: Material(
             color: Colors.black,
             child: AspectRatio(
@@ -731,8 +712,14 @@ class _CustomVideoPlayerControlsState
 }
 
 class _VideoInfoSection extends StatelessWidget {
-  const _VideoInfoSection({required this.title});
-  final String title;
+  const _VideoInfoSection({required this.video});
+  final Video video;
+
+  String _formatViews(int views) {
+    if (views >= 1000000) return '${(views / 1000000).toStringAsFixed(1)}M';
+    if (views >= 1000) return '${(views / 1000).toStringAsFixed(1)}K';
+    return views.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -742,7 +729,7 @@ class _VideoInfoSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
+            video.title,
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
@@ -754,7 +741,7 @@ class _VideoInfoSection extends StatelessWidget {
           ),
           SizedBox(height: 4.h),
           Text(
-            '1.2M views • 2 months ago',
+            '${_formatViews(video.views)} views • ${timeago.format(video.publishedAt)}',
             style: TextStyle(
               fontSize: 12.sp,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -767,17 +754,14 @@ class _VideoInfoSection extends StatelessWidget {
 }
 
 class _ChannelInfoSection extends StatelessWidget {
-  const _ChannelInfoSection({this.channelName, this.channelId});
-  final String? channelName;
-  final String? channelId;
+  const _ChannelInfoSection({required this.video});
+  final Video video;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        if (channelId != null) {
-          context.push('/channel/$channelId');
-        }
+        context.push('/channel/${video.channelId}');
       },
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -788,12 +772,12 @@ class _ChannelInfoSection extends StatelessWidget {
               backgroundColor: Theme.of(
                 context,
               ).colorScheme.surfaceContainerHighest,
-              backgroundImage: channelName != null && channelName!.isNotEmpty
+              backgroundImage: video.channelName.isNotEmpty
                   ? CachedNetworkImageProvider(
-                      'https://ui-avatars.com/api/?name=${Uri.encodeComponent(channelName!)}&background=random&format=png',
+                      'https://ui-avatars.com/api/?name=${Uri.encodeComponent(video.channelName)}&background=random&format=png',
                     )
                   : null,
-              child: channelName == null || channelName!.isEmpty
+              child: video.channelName.isEmpty
                   ? Icon(
                       Icons.person,
                       color: Theme.of(
@@ -808,7 +792,7 @@ class _ChannelInfoSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    channelName ?? 'Unknown Channel',
+                    video.channelName,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).textTheme.bodyLarge?.color,
@@ -844,14 +828,8 @@ class _ChannelInfoSection extends StatelessWidget {
 }
 
 class _ActionButtonsSection extends StatefulWidget {
-  const _ActionButtonsSection({
-    required this.videoUrl,
-    required this.videoId,
-    required this.title,
-  });
-  final String videoUrl;
-  final String videoId;
-  final String title;
+  const _ActionButtonsSection({required this.video});
+  final Video video;
 
   @override
   State<_ActionButtonsSection> createState() => _ActionButtonsSectionState();
@@ -880,9 +858,9 @@ class _ActionButtonsSectionState extends State<_ActionButtonsSection>
 
   Future<void> _startDownload() async {
     context.read<DownloadManagerCubit>().queueDownload(
-      videoId: widget.videoId,
-      title: widget.title,
-      sourceUrl: widget.videoUrl,
+      videoId: widget.video.id,
+      title: widget.video.title,
+      sourceUrl: widget.video.videoUrl,
     );
   }
 
@@ -925,13 +903,15 @@ class _ActionButtonsSectionState extends State<_ActionButtonsSection>
             ),
             label: 'Share',
             onTap: () {
-              Share.share('Check out this awesome video: ${widget.videoUrl}');
+              Share.share(
+                'Check out this awesome video: ${widget.video.videoUrl}',
+              );
             },
           ),
           SizedBox(width: 8.w),
           BlocBuilder<DownloadManagerCubit, DownloadManagerState>(
             builder: (context, state) {
-              final id = widget.videoId;
+              final id = widget.video.id;
               final item = state.downloads
                   .where((e) => e.videoId == id)
                   .firstOrNull;

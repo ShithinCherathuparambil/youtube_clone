@@ -16,7 +16,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ShortsPage extends StatefulWidget {
   static const route = '/shorts';
-  final List<Vido>? initialVideos;
+  final List<Video>? initialVideos;
   final int? initialIndex;
   final String? nextPageToken;
 
@@ -38,7 +38,7 @@ class _ShortsPageState extends State<ShortsPage> {
   bool _isFetchingNextPage = false;
   String? _error;
   String? _nextPageToken;
-  List<Vido> _shorts = [];
+  List<Video> _videos = [];
 
   @override
   void initState() {
@@ -46,12 +46,12 @@ class _ShortsPageState extends State<ShortsPage> {
     _pageController = PageController(initialPage: widget.initialIndex ?? 0);
 
     if (widget.initialVideos != null && widget.initialVideos!.isNotEmpty) {
-      _shorts = List.from(widget.initialVideos!);
+      _videos = List.from(widget.initialVideos!);
       _nextPageToken = widget.nextPageToken;
       _isLoading = false;
 
       if (widget.initialIndex != null &&
-          widget.initialIndex! >= _shorts.length - 2) {
+          widget.initialIndex! >= _videos.length - 2) {
         _fetchNextPage();
       }
     } else {
@@ -80,7 +80,7 @@ class _ShortsPageState extends State<ShortsPage> {
       (paginatedVideos) {
         setState(() {
           _isLoading = false;
-          _shorts = paginatedVideos.videos;
+          _videos = paginatedVideos.videos;
           _nextPageToken = paginatedVideos.nextPageToken;
         });
       },
@@ -116,7 +116,7 @@ class _ShortsPageState extends State<ShortsPage> {
       (paginatedVideos) {
         setState(() {
           _isFetchingNextPage = false;
-          _shorts.addAll(paginatedVideos.videos);
+          _videos.addAll(paginatedVideos.videos);
           _nextPageToken = paginatedVideos.nextPageToken;
         });
       },
@@ -163,14 +163,14 @@ class _ShortsPageState extends State<ShortsPage> {
                   PageView.builder(
                     controller: _pageController,
                     scrollDirection: Axis.vertical,
-                    itemCount: _shorts.length,
+                    itemCount: _videos.length,
                     onPageChanged: (index) {
-                      if (index == _shorts.length - 2) {
+                      if (index == _videos.length - 2) {
                         _fetchNextPage();
                       }
                     },
                     itemBuilder: (context, index) {
-                      return _ShortVideoPlayer(shortData: _shorts[index]);
+                      return _ShortVideoPlayer(shortData: _videos[index]);
                     },
                   ),
                   Positioned(
@@ -230,7 +230,7 @@ class _ShortsPageState extends State<ShortsPage> {
 
 class _ShortVideoPlayer extends StatefulWidget {
   const _ShortVideoPlayer({required this.shortData});
-  final Vido shortData;
+  final Video shortData;
 
   @override
   State<_ShortVideoPlayer> createState() => _ShortVideoPlayerState();
@@ -375,7 +375,7 @@ class _ShortVideoPlayerState extends State<_ShortVideoPlayer> {
 
 class _ShortsActionBar extends StatelessWidget {
   const _ShortsActionBar({required this.shortData});
-  final Vido shortData;
+  final Video shortData;
 
   String _formatNumber(int num) {
     if (num >= 1000000) return '${(num / 1000000).toStringAsFixed(1)}M';
@@ -465,7 +465,7 @@ class _ActionItem extends StatelessWidget {
 
 class _ShortsInfoOverlay extends StatelessWidget {
   const _ShortsInfoOverlay({required this.shortData});
-  final Vido shortData;
+  final Video shortData;
 
   @override
   Widget build(BuildContext context) {

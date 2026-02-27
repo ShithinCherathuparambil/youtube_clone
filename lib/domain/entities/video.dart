@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
-class Vido extends Equatable {
-  const Vido({
+class Video extends Equatable {
+  const Video({
     required this.id,
     required this.title,
     required this.channelName,

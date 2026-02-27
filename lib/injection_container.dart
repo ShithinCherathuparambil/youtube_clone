@@ -8,6 +8,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'core/network/dio_client.dart';
 import 'core/network/network_info.dart';
 import 'core/security/aes_encryption_service.dart';
+import 'core/security/key_management_service.dart';
 import 'data/datasources/download_local_data_source.dart';
 import 'data/datasources/download_remote_data_source.dart';
 import 'data/datasources/video_remote_data_source.dart';
@@ -43,6 +44,12 @@ import 'presentation/bloc/language/language_cubit.dart';
 import 'presentation/bloc/download/download_manager_cubit.dart';
 import 'presentation/bloc/video_player/video_player_bloc.dart';
 import 'presentation/bloc/search/search_bloc.dart';
+import 'presentation/bloc/watch_history/watch_history_cubit.dart';
+import 'data/datasources/watch_history_local_data_source.dart';
+import 'data/repositories/watch_history_repository_impl.dart';
+import 'domain/repositories/watch_history_repository.dart';
+import 'domain/usecases/add_to_history.dart';
+import 'domain/usecases/get_watch_history.dart';
 
 final sl = GetIt.instance;
 
@@ -57,6 +64,7 @@ Future<void> init() async {
     ..registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()))
     ..registerLazySingleton(() => DioClient())
     ..registerLazySingleton(() => const FlutterSecureStorage())
+    ..registerLazySingleton(() => KeyManagementService(sl()))
     ..registerLazySingleton(() => AesEncryptionService(sl()))
     ..registerLazySingleton<VideoRemoteDataSource>(
       () => VideoRemoteDataSourceImpl(sl()),
@@ -66,6 +74,9 @@ Future<void> init() async {
     )
     ..registerLazySingleton<DownloadLocalDataSource>(
       () => DownloadLocalDataSourceImpl(),
+    )
+    ..registerLazySingleton<WatchHistoryLocalDataSource>(
+      () => WatchHistoryLocalDataSourceImpl(),
     )
     ..registerLazySingleton(() => BackgroundDownloadService())
     ..registerLazySingleton(() => StorageService())
@@ -81,6 +92,9 @@ Future<void> init() async {
     ..registerLazySingleton<SearchHistoryRepository>(
       () => SearchHistoryRepositoryImpl(sharedPreferences: sl()),
     )
+    ..registerLazySingleton<WatchHistoryRepository>(
+      () => WatchHistoryRepositoryImpl(sl()),
+    )
     ..registerLazySingleton(() => GetComments(sl()))
     ..registerLazySingleton(() => GetChannelDetails(sl()))
     ..registerLazySingleton(() => GetHomeVideos(sl()))
@@ -93,13 +107,16 @@ Future<void> init() async {
     ..registerLazySingleton(() => GetCachedDownloads(sl()))
     ..registerLazySingleton(() => GetDecryptedFile(sl()))
     ..registerLazySingleton(() => DeleteDownload(sl()))
+    ..registerLazySingleton(() => AddToHistory(sl()))
+    ..registerLazySingleton(() => GetWatchHistory(sl()))
     ..registerFactory(() => AuthBloc(sl()))
     ..registerFactory(() => ProfileCubit(sl()))
     ..registerFactory(() => ThemeCubit(sl()))
     ..registerFactory(() => LanguageCubit(sl()))
     ..registerFactory(() => VideoPlayerBloc())
     ..registerFactory(() => DownloadManagerCubit(sl(), sl(), sl(), sl(), sl()))
-    ..registerFactory(() => SearchBloc(sl(), sl()));
+    ..registerFactory(() => SearchBloc(sl(), sl()))
+    ..registerFactory(() => WatchHistoryCubit(sl(), sl()));
 
   // External
   final sharedPreferences = await SharedPreferences.getInstance();

@@ -22,7 +22,7 @@ class _ChannelProfilePageState extends State<ChannelProfilePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   Channel? _channel;
-  List<Vido> _videos = [];
+  List<Video> _videos = [];
   bool _isLoading = true;
   String? _error;
 

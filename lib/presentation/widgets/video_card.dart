@@ -11,7 +11,7 @@ import '../../domain/entities/video.dart';
 class VideoCard extends StatelessWidget {
   const VideoCard({super.key, required this.video});
 
-  final Vido video;
+  final Video video;
 
   String _formatViews(int views) {
     if (views >= 1000000) {
@@ -37,60 +37,48 @@ class VideoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        context.push(
-          '/watch',
-          extra: {
-            'videoUrl': video.videoUrl,
-            'title': video.title,
-            'id': video.id,
-            'channelName': video.channelName,
-            'channelId': video.channelId,
-          },
-        );
+        context.push('/watch', extra: video);
       },
       child: Column(
         children: [
           Stack(
             children: [
-              Hero(
-                tag: 'video_thumb_${video.id}',
-                child: Material(
-                  color: Colors.transparent,
-                  child: CachedNetworkImage(
-                    imageUrl: video.thumbnailUrl,
-                    height: 220.h,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              FontAwesomeIcons.youtube,
-                              color: Colors.red,
-                              size: 40.sp,
+              Material(
+                color: Colors.transparent,
+                child: CachedNetworkImage(
+                  imageUrl: video.thumbnailUrl,
+                  height: 220.h,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            FontAwesomeIcons.youtube,
+                            color: Colors.red,
+                            size: 40.sp,
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            'Preview not available',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
-                            SizedBox(height: 8.h),
-                            Text(
-                              'Preview not available',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

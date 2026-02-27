@@ -6,7 +6,7 @@ enum SearchStatus { initial, loading, success, failure }
 
 class SearchState extends Equatable {
   final SearchStatus status;
-  final List<Vido> videos;
+  final List<Video> videos;
   final List<String> history;
   final Failure? error;
   final String? nextPageToken;
@@ -21,7 +21,7 @@ class SearchState extends Equatable {
 
   SearchState copyWith({
     SearchStatus? status,
-    List<Vido>? videos,
+    List<Video>? videos,
     List<String>? history,
     Failure? error,
     String? nextPageToken,

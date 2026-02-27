@@ -22,7 +22,7 @@ class _SearchPageState extends State<SearchPage> {
   bool _isFetchingNextPage = false;
   String? _error;
   String? _nextPageToken;
-  List<Vido> _videos = [];
+  List<Video> _videos = [];
   String _currentQuery = '';
 
   @override

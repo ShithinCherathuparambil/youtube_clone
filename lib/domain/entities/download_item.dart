@@ -12,6 +12,8 @@ class DownloadItem extends Equatable {
     required this.progress,
     this.taskId,
     this.errorMessage,
+    this.videoHash,
+    this.isEncrypted = false,
   });
 
   final String videoId;
@@ -22,6 +24,8 @@ class DownloadItem extends Equatable {
   final double progress;
   final String? taskId;
   final String? errorMessage;
+  final String? videoHash;
+  final bool isEncrypted;
 
   DownloadItem copyWith({
     DownloadStatus? status,
@@ -29,6 +33,8 @@ class DownloadItem extends Equatable {
     String? outputPath,
     String? taskId,
     String? errorMessage,
+    String? videoHash,
+    bool? isEncrypted,
   }) {
     return DownloadItem(
       videoId: videoId,
@@ -39,6 +45,8 @@ class DownloadItem extends Equatable {
       progress: progress ?? this.progress,
       taskId: taskId ?? this.taskId,
       errorMessage: errorMessage,
+      videoHash: videoHash ?? this.videoHash,
+      isEncrypted: isEncrypted ?? this.isEncrypted,
     );
   }
 
@@ -51,6 +59,8 @@ class DownloadItem extends Equatable {
     status,
     progress,
     errorMessage,
+    videoHash,
+    isEncrypted,
   ];
 
   Map<String, dynamic> toMap() {
@@ -63,6 +73,8 @@ class DownloadItem extends Equatable {
       'progress': progress,
       'taskId': taskId,
       'errorMessage': errorMessage,
+      'videoHash': videoHash,
+      'isEncrypted': isEncrypted,
     };
   }
 
@@ -76,6 +88,8 @@ class DownloadItem extends Equatable {
       progress: (map['progress'] as num).toDouble(),
       taskId: map['taskId'] as String?,
       errorMessage: map['errorMessage'] as String?,
+      videoHash: map['videoHash'] as String?,
+      isEncrypted: map['isEncrypted'] as bool? ?? false,
     );
   }
 }

@@ -148,7 +148,19 @@ class _DownloadsPageState extends State<DownloadsPage> {
             if (_isDecrypting)
               Container(
                 color: Colors.black54,
-                child: const Center(child: CircularProgressIndicator()),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      SizedBox(height: 16.h),
+                      Text(
+                        'Checking Integrity & Decrypting...',
+                        style: TextStyle(color: Colors.white, fontSize: 16.sp),
+                      ),
+                    ],
+                  ),
+                ),
               ),
           ],
         );
@@ -354,8 +366,12 @@ class _DownloadsPageState extends State<DownloadsPage> {
                 '${WatchPage.route}?videoUrl=${Uri.encodeComponent(file.path)}&title=${Uri.encodeComponent(title)}&id=$id',
               );
             } else {
+              final error = context.read<DownloadManagerCubit>().state.error;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Failed to decrypt video')),
+                SnackBar(
+                  content: Text(error ?? 'Failed to decrypt or verify video'),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ),
               );
             }
           }
@@ -510,12 +526,16 @@ class _DownloadsPageState extends State<DownloadsPage> {
                       Text(
                         status == DownloadStatus.completed
                             ? l10n.videoEncrypted
+                            : status == DownloadStatus.encrypting
+                            ? 'Encrypting...'
                             : 'Status: ${status.name}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11.sp,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: status == DownloadStatus.encrypting
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                       if (status == DownloadStatus.downloading)

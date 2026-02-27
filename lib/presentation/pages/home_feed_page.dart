@@ -37,13 +37,13 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
   bool _isFetchingNextPage = false;
   Failure? _error;
   String? _nextPageToken;
-  List<Vido> _videos = [];
+  List<Video> _videos = [];
   List<VideoCategory> _categories = [];
   String _selectedCategoryId = '0';
   final ScrollController _scrollController = ScrollController();
 
   bool _isLoadingShorts = true;
-  List<Vido> _shorts = [];
+  List<Video> _shorts = [];
 
   @override
   void initState() {
@@ -172,6 +172,7 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const PageStorageKey<String>('home_feed'),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: _fetchCategoriesAndVideos,

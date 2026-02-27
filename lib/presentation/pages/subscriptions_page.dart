@@ -33,7 +33,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
   bool _isLoadingChannels = true;
   bool _isLoadingVideos = true;
   List<Channel> _channels = [];
-  List<Vido> _videos = [];
+  List<Video> _videos = [];
   Failure? _error;
 
   @override
@@ -79,6 +79,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const PageStorageKey<String>('subscriptions'),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Row(

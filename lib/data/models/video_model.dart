@@ -1,7 +1,7 @@
 import '../../core/utils/duration_parser.dart';
 import '../../domain/entities/video.dart';
 
-class VideoModel extends Vido {
+class VideoModel extends Video {
   const VideoModel({
     required super.id,
     required super.title,

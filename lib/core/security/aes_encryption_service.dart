@@ -1,125 +1,175 @@
-import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
-import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:convert/convert.dart';
+import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as enc;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:injectable/injectable.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pointycastle/export.dart' as pc;
 
 import '../error/exceptions.dart';
+import 'key_management_service.dart';
 
-/// Encrypts downloaded videos and keeps the AES key in secure storage.
-///
-/// Output format for encrypted bytes:
-/// [16-byte IV][ciphertext bytes]
+/// Service for handling secure video encryption and decryption.
+/// Uses AES-256 (CTR) for encryption and SHA-256 for integrity checking.
 @lazySingleton
 class AesEncryptionService {
-  AesEncryptionService(this._secureStorage);
+  final KeyManagementService _keyManagementService;
 
-  static const _keyRef = 'youtube_clone_aes_256_key';
-  final FlutterSecureStorage _secureStorage;
+  AesEncryptionService(this._keyManagementService);
 
-  Future<enc.Key> _getOrCreateKey() async {
+  static const int _chunkSize = 1024 * 1024; // 1MB buffer
+
+  /// Encrypts a file using AES-256 CTR mode.
+  /// Returns the SHA-256 hash of the original content.
+  Future<String> encryptFile({
+    required File inputFile,
+    required File outputFile,
+    required String videoId,
+    Function(double progress)? onProgress,
+  }) async {
+    RandomAccessFile? inRaf;
+    RandomAccessFile? outRaf;
     try {
-      final saved = await _secureStorage.read(key: _keyRef);
-      if (saved != null && saved.isNotEmpty) {
-        return enc.Key(Uint8List.fromList(base64Decode(saved)));
-      }
-
-      final random = Random.secure();
-      final keyBytes = Uint8List.fromList(
-        List<int>.generate(32, (_) => random.nextInt(256)),
-      );
-      await _secureStorage.write(key: _keyRef, value: base64Encode(keyBytes));
-      return enc.Key(keyBytes);
-    } catch (e) {
-      throw EncryptionException('Failed to access AES key: $e');
-    }
-  }
-
-  Future<Uint8List> encryptBytes(Uint8List plainBytes) async {
-    try {
-      final key = await _getOrCreateKey();
+      final key = await _keyManagementService.getKeyForVideo(videoId);
       final iv = enc.IV.fromSecureRandom(16);
-      final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
-      final encrypted = encrypter.encryptBytes(plainBytes, iv: iv);
 
-      final output = BytesBuilder();
-      output.add(iv.bytes);
-      output.add(encrypted.bytes);
-      return output.toBytes();
-    } catch (e) {
-      throw EncryptionException('Failed to encrypt bytes: $e');
-    }
-  }
+      // Initialize PointyCastle CTR cipher
+      final cipher = pc.CTRStreamCipher(pc.AESEngine())
+        ..init(true, pc.ParametersWithIV(pc.KeyParameter(key.bytes), iv.bytes));
 
-  Future<Uint8List> decryptBytes(Uint8List encryptedPayload) async {
-    try {
-      if (encryptedPayload.length <= 16) {
-        throw EncryptionException('Encrypted payload is invalid');
+      inRaf = await inputFile.open(mode: FileMode.read);
+      outRaf = await outputFile.open(mode: FileMode.write);
+
+      // 1. Write IV (16 bytes)
+      await outRaf.writeFrom(iv.bytes);
+
+      final totalSize = await inRaf.length();
+      int processedSize = 0;
+
+      final hashAccumulator = AccumulatorSink<Digest>();
+      final shaSink = sha256.startChunkedConversion(hashAccumulator);
+
+      final buffer = Uint8List(_chunkSize);
+      while (processedSize < totalSize) {
+        final bytesRead = await inRaf.readInto(buffer);
+        if (bytesRead == 0) break;
+
+        final chunk = buffer.sublist(0, bytesRead);
+
+        // Update hash with original bytes
+        shaSink.add(chunk);
+
+        // Encrypt chunk
+        final encryptedChunk = cipher.process(chunk);
+        await outRaf.writeFrom(encryptedChunk);
+
+        processedSize += bytesRead;
+        if (onProgress != null) {
+          onProgress(processedSize / totalSize);
+        }
       }
 
-      final key = await _getOrCreateKey();
-      final iv = enc.IV(encryptedPayload.sublist(0, 16));
-      final cipherBytes = encryptedPayload.sublist(16);
-      final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
-      final decrypted = encrypter.decryptBytes(
-        enc.Encrypted(cipherBytes),
-        iv: iv,
-      );
-      return Uint8List.fromList(decrypted);
+      shaSink.close();
+      return hashAccumulator.events.single.toString();
     } catch (e) {
-      throw EncryptionException('Failed to decrypt bytes: $e');
+      throw EncryptionException('Encryption failed: $e');
+    } finally {
+      await inRaf?.close();
+      await outRaf?.close();
     }
   }
 
-  /// Decrypts an encrypted file and yields chunks for in-app playback.
-  ///
-  /// Note: this keeps the content private to app-controlled streams.
-  Stream<List<int>> decryptFileAsStream(
-    File encryptedFile, {
-    int outputChunkSize = 64 * 1024,
-  }) async* {
-    try {
-      final encryptedPayload = await encryptedFile.readAsBytes();
-      final plainBytes = await decryptBytes(
-        Uint8List.fromList(encryptedPayload),
-      );
-
-      for (var i = 0; i < plainBytes.length; i += outputChunkSize) {
-        final end = (i + outputChunkSize < plainBytes.length)
-            ? i + outputChunkSize
-            : plainBytes.length;
-        yield plainBytes.sublist(i, end);
-      }
-    } catch (e) {
-      throw EncryptionException('Failed to stream decrypt file: $e');
-    }
-  }
-
-  /// Decrypts to a temporary file for standard video player playback.
-  /// The file is created in the temp directory and should be deleted after use.
-  Future<File> decryptToTempFile(String videoId, String encryptedPath) async {
+  /// Decrypts a file using AES-256 CTR mode.
+  /// Verifies integrity against the provided expectedHash.
+  Future<File> decryptToTempFile({
+    required String videoId,
+    required String encryptedPath,
+    required String expectedHash,
+    Function(double progress)? onProgress,
+  }) async {
+    RandomAccessFile? inRaf;
+    RandomAccessFile? outRaf;
+    File? tempFile;
     try {
       final encryptedFile = File(encryptedPath);
       if (!await encryptedFile.exists()) {
-        throw EncryptionException('Encrypted file not found');
+        throw EncryptionException('Encrypted file not found: $encryptedPath');
       }
 
-      final encryptedPayload = await encryptedFile.readAsBytes();
-      final plainBytes = await decryptBytes(
-        Uint8List.fromList(encryptedPayload),
-      );
+      final key = await _keyManagementService.getKeyForVideo(videoId);
+      inRaf = await encryptedFile.open(mode: FileMode.read);
 
-      final tempDir = Directory.systemTemp;
-      final tempFile = File(
+      // 1. Read IV (16 bytes)
+      final ivBytes = await inRaf.read(16);
+      if (ivBytes.length < 16) {
+        throw EncryptionException('Invalid encrypted file: IV missing');
+      }
+      final iv = enc.IV(ivBytes);
+
+      // Initialize PointyCastle CTR cipher for decryption
+      final cipher = pc.CTRStreamCipher(
+        pc.AESEngine(),
+      )..init(false, pc.ParametersWithIV(pc.KeyParameter(key.bytes), iv.bytes));
+
+      final tempDir = await getTemporaryDirectory();
+      tempFile = File(
         '${tempDir.path}/decrypted_${videoId}_${DateTime.now().millisecondsSinceEpoch}.mp4',
       );
-      await tempFile.writeAsBytes(plainBytes, flush: true);
+      outRaf = await tempFile.open(mode: FileMode.write);
+
+      final totalSize = await inRaf.length() - 16;
+      int processedSize = 0;
+
+      final hashAccumulator = AccumulatorSink<Digest>();
+      final shaSink = sha256.startChunkedConversion(hashAccumulator);
+
+      final buffer = Uint8List(_chunkSize);
+      while (processedSize < totalSize) {
+        final bytesRead = await inRaf.readInto(buffer);
+        if (bytesRead == 0) break;
+
+        final chunk = buffer.sublist(0, bytesRead);
+
+        // Decrypt chunk
+        final decryptedChunk = cipher.process(chunk);
+        await outRaf.writeFrom(decryptedChunk);
+
+        // Update hash with decrypted bytes
+        shaSink.add(decryptedChunk);
+
+        processedSize += bytesRead;
+        if (onProgress != null) {
+          onProgress(processedSize / totalSize);
+        }
+      }
+
+      shaSink.close();
+      final actualHash = hashAccumulator.events.single.toString();
+
+      if (actualHash != expectedHash) {
+        throw EncryptionException(
+          'Integrity check failed: File is corrupt or tempered with.',
+        );
+      }
+
       return tempFile;
     } catch (e) {
-      throw EncryptionException('Failed to decrypt to temp file: $e');
+      // Clean up temp file on failure
+      if (tempFile != null && await tempFile.exists()) {
+        await tempFile.delete();
+      }
+      throw EncryptionException('Decryption failed: $e');
+    } finally {
+      await inRaf?.close();
+      await outRaf?.close();
     }
+  }
+
+  /// Optional: Clean up decryption keys when video is deleted.
+  Future<void> removeVideoKey(String videoId) async {
+    await _keyManagementService.removeKeyForVideo(videoId);
   }
 }
