@@ -1,8 +1,3 @@
-/// Unit tests for [VideoRemoteDataSourceImpl].
-///
-/// All HTTP requests are mocked via Mocktail and DioClient is not exercised —
-/// only the mapping / exception-conversion logic is tested.
-
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -162,7 +157,7 @@ void main() {
   });
 
   group('VideoRemoteDataSource.getComments', () {
-    const _commentsJson = {
+    const commentsJson = {
       'items': [
         {
           'snippet': {
@@ -186,7 +181,7 @@ void main() {
           any(),
           queryParameters: any(named: 'queryParameters'),
         ),
-      ).thenAnswer((_) async => _response(_commentsJson));
+      ).thenAnswer((_) async => _response(commentsJson));
 
       final comments = await dataSource.getComments('abc123');
       expect(comments.length, 1);
@@ -215,7 +210,7 @@ void main() {
   });
 
   group('VideoRemoteDataSource.searchVideos', () {
-    const _searchItem = {
+    const searchItem = {
       'id': {'videoId': 'xyz789'},
       'snippet': {
         'title': 'Search Result',
@@ -236,7 +231,7 @@ void main() {
         ),
       ).thenAnswer(
         (_) async => _response({
-          'items': [_searchItem],
+          'items': [searchItem],
         }),
       );
 
@@ -266,7 +261,7 @@ void main() {
   });
 
   group('VideoRemoteDataSource.getChannelDetails', () {
-    const _channelJson = {
+    const channelJson = {
       'items': [
         {
           'id': 'ch1',
@@ -294,7 +289,7 @@ void main() {
           any(),
           queryParameters: any(named: 'queryParameters'),
         ),
-      ).thenAnswer((_) async => _response(_channelJson));
+      ).thenAnswer((_) async => _response(channelJson));
 
       final channel = await dataSource.getChannelDetails('ch1');
       expect(channel.id, 'ch1');

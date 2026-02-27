@@ -1,5 +1,3 @@
-/// Integration test: Tap a video card → navigates to the watch page.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,7 +23,7 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (_, __) => Scaffold(
+          builder: (_, _) => Scaffold(
             body: ListView(children: [VideoCard(video: tVideo)]),
           ),
         ),
@@ -36,13 +34,13 @@ void main() {
             return Scaffold(appBar: AppBar(title: Text('Watch: $title')));
           },
         ),
-        GoRoute(path: '/channel/:id', builder: (_, __) => const Scaffold()),
+        GoRoute(path: '/channel/:id', builder: (_, _) => const Scaffold()),
       ],
     );
 
     return ScreenUtilInit(
       designSize: const Size(375, 812),
-      builder: (_, __) => MaterialApp.router(routerConfig: router),
+      builder: (_, _) => MaterialApp.router(routerConfig: router),
     );
   }
 

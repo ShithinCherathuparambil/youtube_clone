@@ -1,3 +1,5 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -73,7 +75,7 @@ void main() {
     await tempDir.delete(recursive: true);
   });
 
-  File _tempFile(String name, List<int> bytes) {
+  File tempFile(String name, List<int> bytes) {
     final f = File('${tempDir.path}/$name');
     f.writeAsBytesSync(bytes);
     return f;
@@ -82,7 +84,7 @@ void main() {
   group('AesEncryptionService.encryptFile', () {
     test('encrypted file is larger than input (IV prefix appended)', () async {
       final content = List<int>.generate(1024 * 10, (i) => i % 256);
-      final input = _tempFile('plain.mp4', content);
+      final input = tempFile('plain.mp4', content);
       final output = File('${tempDir.path}/enc.encvid');
 
       await service.encryptFile(
@@ -97,7 +99,7 @@ void main() {
 
     test('returns a non-empty SHA-256 hash string', () async {
       final content = List<int>.generate(512, (i) => i % 256);
-      final input = _tempFile('plain2.mp4', content);
+      final input = tempFile('plain2.mp4', content);
       final output = File('${tempDir.path}/enc2.encvid');
 
       final hash = await service.encryptFile(
@@ -115,7 +117,7 @@ void main() {
       'two encryptions of same content produce different ciphertext (unique IVs)',
       () async {
         final content = List<int>.generate(1024, (i) => 0xAB);
-        final input = _tempFile('plain3.mp4', content);
+        final input = tempFile('plain3.mp4', content);
         final out1 = File('${tempDir.path}/enc3a.encvid');
         final out2 = File('${tempDir.path}/enc3b.encvid');
 
@@ -142,7 +144,7 @@ void main() {
   group('AesEncryptionService.decryptToTempFile', () {
     test('encrypt → decrypt round-trip restores original content', () async {
       final originalContent = List<int>.generate(1024 * 5, (i) => i % 256);
-      final input = _tempFile('video_orig.mp4', originalContent);
+      final input = tempFile('video_orig.mp4', originalContent);
       final encrypted = File('${tempDir.path}/video_enc.encvid');
 
       // Encrypt
@@ -170,7 +172,7 @@ void main() {
       'throws EncryptionException on integrity check failure (tampered file)',
       () async {
         final content = List<int>.generate(2048, (i) => i % 256);
-        final input = _tempFile('tampered.mp4', content);
+        final input = tempFile('tampered.mp4', content);
         final encrypted = File('${tempDir.path}/tampered_enc.encvid');
 
         // Encrypt

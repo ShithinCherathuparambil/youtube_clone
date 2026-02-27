@@ -38,7 +38,7 @@ class WatchHistoryLocalDataSourceImpl implements WatchHistoryLocalDataSource {
 
       // Trim if exceeds max items
       if (box.length > _maxItems) {
-        final keys = box.keys.toList();
+        // final keys = box.keys.toList();
         // Since we want to keep the most recent, and Hive doesn't guarantee insertion order if we delete/re-add,
         // we should ideally sort by watchedAt if we want to be strict.
         // But for simplicity, let's just remove the first key if it's over limit.

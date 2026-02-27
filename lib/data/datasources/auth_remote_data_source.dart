@@ -7,7 +7,10 @@ import '../../core/error/exceptions.dart';
 ///
 /// Keep this boundary in data layer and call FirebaseAuth SDK here.
 abstract class AuthRemoteDataSource {
-  Future<void> signInWithEmail({required String email, required String password});
+  Future<void> signInWithEmail({
+    required String email,
+    required String password,
+  });
   Future<void> signInWithPhoneOtp({required String phone, required String otp});
   Future<void> persistSessionToken(String token);
 }
@@ -20,7 +23,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String password,
   }) async {
     try {
-      // TODO(shithin): Integrate FirebaseAuth.signInWithEmailAndPassword.
       if (email.isEmpty || password.isEmpty) {
         throw const FormatException('Email/password cannot be empty');
       }
@@ -35,7 +37,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String otp,
   }) async {
     try {
-      // TODO(shithin): Integrate FirebaseAuth PhoneAuthCredential flow.
       if (phone.isEmpty || otp.isEmpty) {
         throw const FormatException('Phone/OTP cannot be empty');
       }

@@ -3,7 +3,7 @@ import '../../domain/entities/video.dart';
 class WatchHistoryModel extends Video {
   final DateTime watchedAt;
 
-  WatchHistoryModel({
+  const WatchHistoryModel({
     required super.id,
     required super.title,
     required super.channelName,
@@ -13,9 +13,9 @@ class WatchHistoryModel extends Video {
     required super.duration,
     required super.views,
     required super.publishedAt,
+    required this.watchedAt,
     super.likes,
     super.commentCount,
-    required this.watchedAt,
   });
 
   factory WatchHistoryModel.fromVideo(Video video, DateTime watchedAt) {
