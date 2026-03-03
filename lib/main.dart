@@ -24,7 +24,7 @@ Future<void> main() async {
 
   // Initialize Notifications
   final notifications = FlutterLocalNotificationsPlugin();
-  const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const androidInit = AndroidInitializationSettings('@mipmap/launcher_icon');
   const iosInit = DarwinInitializationSettings();
   await notifications.initialize(
     const InitializationSettings(android: androidInit, iOS: iosInit),

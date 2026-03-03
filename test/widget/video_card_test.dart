@@ -13,16 +13,16 @@ Widget _buildTestable(Widget child, {GoRouter? router}) {
         routes: [
           GoRoute(
             path: '/',
-            builder: (_, __) => Scaffold(body: child),
+            builder: (_, _) => Scaffold(body: child),
           ),
-          GoRoute(path: '/watch', builder: (_, __) => const Scaffold()),
-          GoRoute(path: '/channel/:id', builder: (_, __) => const Scaffold()),
+          GoRoute(path: '/watch', builder: (_, _) => const Scaffold()),
+          GoRoute(path: '/channel/:id', builder: (_, _) => const Scaffold()),
         ],
       );
 
   return ScreenUtilInit(
     designSize: const Size(375, 812),
-    builder: (_, __) => MaterialApp.router(routerConfig: goRouter),
+    builder: (_, _) => MaterialApp.router(routerConfig: goRouter),
   );
 }
 
@@ -83,7 +83,7 @@ void main() {
         routes: [
           GoRoute(
             path: '/',
-            builder: (_, __) => Scaffold(body: VideoCard(video: _tVideo)),
+            builder: (_, _) => Scaffold(body: VideoCard(video: _tVideo)),
           ),
           GoRoute(
             path: '/watch',
@@ -92,7 +92,7 @@ void main() {
               return const Scaffold();
             },
           ),
-          GoRoute(path: '/channel/:id', builder: (_, __) => const Scaffold()),
+          GoRoute(path: '/channel/:id', builder: (_, _) => const Scaffold()),
         ],
       );
 

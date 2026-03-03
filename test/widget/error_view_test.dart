@@ -5,7 +5,7 @@ import 'package:youtube_clone/presentation/widgets/error_view.dart';
 
 Widget _testWidget(Widget child) => ScreenUtilInit(
   designSize: const Size(375, 812),
-  builder: (_, __) => MaterialApp(home: Scaffold(body: child)),
+  builder: (_, _) => MaterialApp(home: Scaffold(body: child)),
 );
 
 void main() {

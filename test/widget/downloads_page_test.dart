@@ -33,18 +33,18 @@ Widget _buildDownloadsPage(DownloadManagerCubit cubit) {
     routes: [
       GoRoute(
         path: '/',
-        builder: (_, __) => BlocProvider<DownloadManagerCubit>.value(
+        builder: (_, _) => BlocProvider<DownloadManagerCubit>.value(
           value: cubit,
           child: const DownloadsPage(),
         ),
       ),
-      GoRoute(path: '/watch', builder: (_, __) => const Scaffold()),
+      GoRoute(path: '/watch', builder: (_, _) => const Scaffold()),
     ],
   );
 
   return ScreenUtilInit(
     designSize: const Size(375, 812),
-    builder: (_, __) => MaterialApp.router(
+    builder: (_, _) => MaterialApp.router(
       routerConfig: router,
       localizationsDelegates: const [
         AppLocalizations.delegate,
